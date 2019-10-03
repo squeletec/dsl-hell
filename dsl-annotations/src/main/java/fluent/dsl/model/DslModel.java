@@ -29,8 +29,9 @@
 
 package fluent.dsl.model;
 
-import java.util.List;
+import java.util.*;
 
+import static fluent.dsl.model.DslUtils.capitalize;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -38,6 +39,7 @@ public class DslModel extends TypeModel {
     private final String packageName;
     private final KeywordModel factory;
     private final KeywordModel delegate;
+    private final Map<String, ParameterModel> constants = new LinkedHashMap<>();
 
     public DslModel(String packageName, List<AnnotationModel> annotations, String name, String factory, ParameterModel source, String delegate) {
         super(annotations, name);
@@ -61,5 +63,9 @@ public class DslModel extends TypeModel {
     @Override
     public String toString() {
         return packageName + "." + name();
+    }
+
+    public ParameterModel addConstant(String name) {
+        return constants.computeIfAbsent(name, key -> new ParameterModel(emptyList(), new TypeModel(emptyList(), capitalize(name)), name));
     }
 }

@@ -30,6 +30,7 @@
 package fluent.dsl.processor;
 
 import fluent.dsl.Dsl;
+import fluent.dsl.Parametrized;
 import fluent.dsl.model.DslModel;
 import fluent.dsl.model.ParameterModel;
 import fluent.dsl.model.TypeModel;
@@ -41,6 +42,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class DslParser {
@@ -57,18 +59,21 @@ public class DslParser {
         DslModel dslModel = createModel(element);
         PrefixState prefix = start(dslModel);
         for(AnnotationMirror annotation : element.getAnnotationMirrors()) {
-            prefix = isKeyword(annotation) ? prefix.keyword(annotation) : prefix.annotation(annotation);
+            Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
+            prefix = isKeyword(annotation) ? isNull(parametrized) ? prefix.keyword(annotation) : prefix.parametrizedKeyword(annotation, parametrized.value()) : prefix.annotation(annotation);
         }
         for(ExecutableElement method : ElementFilter.methodsIn(element.getEnclosedElements())) {
             MethodState state = prefix.method(method);
             for (VariableElement parameter : method.getParameters()) {
                 for(AnnotationMirror annotation : parameter.getAnnotationMirrors()) {
-                    state = isKeyword(annotation) ? state.keyword(annotation) : state.annotation(annotation);
+                    Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
+                    state = isKeyword(annotation) ? isNull(parametrized) ? state.keyword(annotation) : state.parametrizedKeyword(annotation, parametrized.value()) : state.annotation(annotation);
                 }
                 state = state.parameter(parameter);
             }
             for(AnnotationMirror annotation : method.getAnnotationMirrors()) {
-                state = isKeyword(annotation) ? state.keyword(annotation) : state.annotation(annotation);
+                Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
+                state = isKeyword(annotation) ? isNull(parametrized) ? state.keyword(annotation) : state.parametrizedKeyword(annotation, parametrized.value()) : state.annotation(annotation);
             }
             state.bind(method);
         }
@@ -82,6 +87,7 @@ public class DslParser {
     public interface MethodState {
         MethodState annotation(AnnotationMirror annotationMirror);
         MethodState keyword(AnnotationMirror annotationMirror);
+        MethodState parametrizedKeyword(AnnotationMirror annotationMirror, int count);
         MethodState parameter(VariableElement variableElement);
         void bind(ExecutableElement method);
     }
@@ -89,6 +95,7 @@ public class DslParser {
     public interface PrefixState {
         PrefixState annotation(AnnotationMirror annotationMirror);
         PrefixState keyword(AnnotationMirror annotationMirror);
+        PrefixState parametrizedKeyword(AnnotationMirror annotationMirror, int count);
         MethodState method(ExecutableElement method);
     }
 

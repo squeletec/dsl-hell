@@ -27,7 +27,7 @@
  *
  */
 
-package fluent.dsl.processor;
+package fluent.dsl.model;
 
 public final class DslUtils {
 
