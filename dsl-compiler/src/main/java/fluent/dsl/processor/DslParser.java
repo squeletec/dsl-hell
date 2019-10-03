@@ -81,7 +81,8 @@ public class DslParser {
     }
 
     private boolean isKeyword(AnnotationMirror annotationMirror) {
-        return nonNull(annotationMirror.getAnnotationType().asElement().getAnnotation(Dsl.class));
+        Element element = annotationMirror.getAnnotationType().asElement();
+        return nonNull(element.getAnnotation(Dsl.class)) || nonNull(element.getEnclosingElement().getAnnotation(Dsl.class));
     }
 
     public interface MethodState {

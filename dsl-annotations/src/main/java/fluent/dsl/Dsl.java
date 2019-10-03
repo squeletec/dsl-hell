@@ -31,10 +31,9 @@ package fluent.dsl;
 
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
-import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.ElementType.*;
 
-@Target({TYPE, ANNOTATION_TYPE})
+@Target({TYPE, ANNOTATION_TYPE, PACKAGE})
 public @interface Dsl {
     String packageName() default "";
     String className() default "";

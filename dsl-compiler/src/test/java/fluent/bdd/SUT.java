@@ -2,5 +2,5 @@ package fluent.bdd;
 
 import fluent.dsl.Dsl;
 
-@Dsl.Parameter
+@Dsl
 public @interface SUT { }

@@ -29,6 +29,4 @@
 
 package fluent.dsl.def;
 
-import fluent.dsl.Dsl;
-
-@Dsl public @interface into { }
+public @interface into { }
