@@ -29,10 +29,12 @@
 
 package fluent.dsl;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.TYPE;
+
+@Target({TYPE, ANNOTATION_TYPE})
 public @interface Dsl {
     String packageName() default "";
     String className() default "";
@@ -40,12 +42,7 @@ public @interface Dsl {
     String delegateMethod() default "delegate";
     String parameterName() default "impl";
 
-    @interface Keyword {}
-
-    @interface Parameter {
-        int collect() default 1;
-        boolean includeParameterName() default true;
-    }
+    @interface Parameter { }
 
     @interface Plugin {
         Class<? extends fluent.dsl.plugin.Plugin> value();

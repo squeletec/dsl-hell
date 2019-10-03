@@ -113,7 +113,7 @@ public class DslGenerator {
     private void generateSignature(KeywordModel model) {
         println((model.hasBinding() ? "@End " : "@Start(\"Unterminated sentence.\") ") + model.type() + " " + model.name() + "(" + parameters(model) + ");");
         model.aliases().forEach(alias -> {
-            println(model.type() + " " + alias + "(" + parameters(model) + ");");
+            println("default " + model.type() + " " + alias + "(" + parameters(model) + ") {");
             indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
             println("}");
         });

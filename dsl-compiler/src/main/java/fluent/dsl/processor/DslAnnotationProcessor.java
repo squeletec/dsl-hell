@@ -37,20 +37,26 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static java.util.Arrays.asList;
+import static javax.lang.model.element.ElementKind.CLASS;
+import static javax.lang.model.element.ElementKind.INTERFACE;
 import static javax.tools.Diagnostic.Kind.WARNING;
 
 @SupportedAnnotationTypes("fluent.dsl.Dsl")
 public class DslAnnotationProcessor extends AbstractProcessor implements Consumer<Element> {
 
+    private final Set<ElementKind> modelTypes = new HashSet<>(asList(INTERFACE, CLASS));
     private final DslParser factory = new DslParser();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        roundEnv.getElementsAnnotatedWith(Dsl.class).forEach(this);
+        roundEnv.getElementsAnnotatedWith(Dsl.class).stream().filter(e -> modelTypes.contains(e.getKind())).forEach(this);
         return true;
     }
 

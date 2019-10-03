@@ -38,10 +38,10 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 
 public class DslParser {
 
@@ -55,42 +55,45 @@ public class DslParser {
 
     public DslModel parseModel(Element element) {
         DslModel dslModel = createModel(element);
-        DslParserState prefix = start(dslModel);
+        PrefixState prefix = start(dslModel);
         for(AnnotationMirror annotation : element.getAnnotationMirrors()) {
-            prefix = accept(prefix, annotation);
+            prefix = isKeyword(annotation) ? prefix.keyword(annotation) : prefix.annotation(annotation);
         }
         for(ExecutableElement method : ElementFilter.methodsIn(element.getEnclosedElements())) {
-            DslParserState state = prefix.branch();
+            MethodState state = prefix.method(method);
             for (VariableElement parameter : method.getParameters()) {
                 for(AnnotationMirror annotation : parameter.getAnnotationMirrors()) {
-                    state = accept(state, annotation);
+                    state = isKeyword(annotation) ? state.keyword(annotation) : state.annotation(annotation);
                 }
-                state = state.accept(parameter);
+                state = state.parameter(parameter);
             }
-            state = state.suffix();
             for(AnnotationMirror annotation : method.getAnnotationMirrors()) {
-                state = accept(state, annotation);
+                state = isKeyword(annotation) ? state.keyword(annotation) : state.annotation(annotation);
             }
             state.bind(method);
         }
         return dslModel;
     }
 
-
-    private DslParserState start(DslModel model) {
-        return new DslParserState.Start(model.factory(), model.factory().parameters().get(0));
+    private boolean isKeyword(AnnotationMirror annotationMirror) {
+        return nonNull(annotationMirror.getAnnotationType().asElement().getAnnotation(Dsl.class));
     }
 
-
-    private static DslParserState accept(DslParserState state, AnnotationMirror annotationMirror) {
-        DeclaredType annotationType = annotationMirror.getAnnotationType();
-        if(annotationType.asElement().getAnnotation(Dsl.Keyword.class) != null) {
-            return state.keyword(annotationType);
-        } if(annotationType.asElement().getAnnotation(Dsl.Parameter.class) != null) {
-            return state.parameter(annotationType);
-        } if(annotationType.asElement().getAnnotation(Dsl.Plugin.class) != null) {
-            return state.plugin(annotationType);
-        }
-        return state.accept(annotationMirror);
+    public interface MethodState {
+        MethodState annotation(AnnotationMirror annotationMirror);
+        MethodState keyword(AnnotationMirror annotationMirror);
+        MethodState parameter(VariableElement variableElement);
+        void bind(ExecutableElement method);
     }
+
+    public interface PrefixState {
+        PrefixState annotation(AnnotationMirror annotationMirror);
+        PrefixState keyword(AnnotationMirror annotationMirror);
+        MethodState method(ExecutableElement method);
+    }
+
+    private PrefixState start(DslModel model) {
+        return new DslParserContext(model, model.factory().parameters().get(0)).new StartPrefix();
+    }
+
 }

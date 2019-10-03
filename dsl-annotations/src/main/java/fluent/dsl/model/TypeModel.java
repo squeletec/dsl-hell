@@ -40,8 +40,8 @@ public class TypeModel extends BaseModel {
         super(annotations, name);
     }
 
-    public KeywordModel add(String className, String methodName, List<String> aliases, List<ParameterModel> parameters) {
-        return keywordModelMap.computeIfAbsent(className, key -> new KeywordModel(annotations(), new TypeModel(emptyList(), className), methodName, aliases, parameters));
+    public KeywordModel add(String className, String methodName, List<String> aliases, List<ParameterModel> parameters, BindingModel binding) {
+        return keywordModelMap.computeIfAbsent(className, key -> new KeywordModel(annotations(), new TypeModel(emptyList(), className), methodName, aliases, parameters, binding));
     }
 
     public List<KeywordModel> keywords() {

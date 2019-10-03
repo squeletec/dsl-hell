@@ -40,8 +40,9 @@ public class AutomationTest {
     public void test() {
         Automation mock = mock(Automation.class);
         AutomationDsl dsl = AutomationDsl.create(mock);
-        dsl.injects().order("Order 1").into().destination("dest");
-        dsl.mustSee().order("Order 1").in().destination("dest");
+        dsl.with().injects().order("Order 1").into().destination("dest");
+        dsl.with().mustSee().order("Order 1").in().destination("dest");
+        int aaa = dsl.with().into().salt("AAA");
         verify(mock).injectOrder("Order 1", "dest");
         verify(mock).verifyOrder("Order 1", "dest");
     }

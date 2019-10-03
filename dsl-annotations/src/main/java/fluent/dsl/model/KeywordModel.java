@@ -35,12 +35,13 @@ public class KeywordModel extends BaseModel {
     private final TypeModel type;
     private final List<String> aliases;
     private final List<ParameterModel> parameters;
-    private BindingModel binding;
-    public KeywordModel(List<AnnotationModel> annotations, TypeModel type, String name, List<String> aliases, List<ParameterModel> parameters) {
+    private final BindingModel binding;
+    public KeywordModel(List<AnnotationModel> annotations, TypeModel type, String name, List<String> aliases, List<ParameterModel> parameters, BindingModel binding) {
         super(annotations, name);
         this.type = type;
         this.aliases = aliases;
         this.parameters = parameters;
+        this.binding = binding;
     }
     public TypeModel type() {
         return hasBinding() ? binding.method().type() : type;
@@ -56,9 +57,5 @@ public class KeywordModel extends BaseModel {
     }
     public boolean hasBinding() {
         return binding != null;
-    }
-
-    public void bind(BindingModel bindingModel) {
-        this.binding = bindingModel;
     }
 }

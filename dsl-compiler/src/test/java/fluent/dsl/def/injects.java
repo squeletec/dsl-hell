@@ -31,4 +31,4 @@ package fluent.dsl.def;
 
 import fluent.dsl.Dsl;
 
-@Dsl.Keyword public @interface injects { }
+@Dsl public @interface injects { }

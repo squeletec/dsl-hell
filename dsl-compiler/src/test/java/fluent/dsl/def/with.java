@@ -27,22 +27,8 @@
  *
  */
 
-package fluent.dsl;
+package fluent.dsl.def;
 
-import fluent.dsl.def.*;
-import fluent.validation.Check;
+import fluent.dsl.Dsl;
 
-@Dsl
-@with public interface Automation {
-
-    void injectOrder(@injects String order, @into String destination);
-
-    void verifyOrder(@mustSee String order, @in String destination);
-
-    void verifyOrder(@mustSeeOrderWith String orderId, @only Check<? super String> orderCheck);
-
-    static int generate(@into String salt) {
-        return 5;
-    }
-
-}
+@Dsl public @interface with { }
