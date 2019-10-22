@@ -68,4 +68,9 @@ public class DslModel extends TypeModel {
     public ParameterModel addConstant(String name) {
         return constants.computeIfAbsent(name, key -> new ParameterModel(emptyList(), new TypeModel(emptyList(), capitalize(name)), name));
     }
+
+    public Collection<ParameterModel> constants() {
+        return constants.values();
+    }
+
 }

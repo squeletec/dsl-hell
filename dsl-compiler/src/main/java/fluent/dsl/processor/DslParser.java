@@ -39,11 +39,11 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.ElementFilter;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static javax.lang.model.util.ElementFilter.methodsIn;
 
 public class DslParser {
 
@@ -56,28 +56,27 @@ public class DslParser {
     }
 
     public DslModel parseModel(Element element) {
-        DslModel dslModel = createModel(element);
-        PrefixState prefix = start(dslModel);
-        for(AnnotationMirror annotation : element.getAnnotationMirrors()) {
-            Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
-            prefix = isKeyword(annotation) ? isNull(parametrized) ? prefix.keyword(annotation) : prefix.parametrizedKeyword(annotation, parametrized.value()) : prefix.annotation(annotation);
-        }
-        for(ExecutableElement method : ElementFilter.methodsIn(element.getEnclosedElements())) {
+        DslModel model = createModel(element);
+        PrefixState prefix = start(model);
+        for(AnnotationMirror annotation : element.getAnnotationMirrors())
+            prefix = annotationState(prefix, annotation);
+        for(ExecutableElement method : methodsIn(element.getEnclosedElements())) {
             MethodState state = prefix.method(method);
             for (VariableElement parameter : method.getParameters()) {
-                for(AnnotationMirror annotation : parameter.getAnnotationMirrors()) {
-                    Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
-                    state = isKeyword(annotation) ? isNull(parametrized) ? state.keyword(annotation) : state.parametrizedKeyword(annotation, parametrized.value()) : state.annotation(annotation);
-                }
+                for(AnnotationMirror annotation : parameter.getAnnotationMirrors())
+                    state = annotationState(state, annotation);
                 state = state.parameter(parameter);
             }
-            for(AnnotationMirror annotation : method.getAnnotationMirrors()) {
-                Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
-                state = isKeyword(annotation) ? isNull(parametrized) ? state.keyword(annotation) : state.parametrizedKeyword(annotation, parametrized.value()) : state.annotation(annotation);
-            }
+            for(AnnotationMirror annotation : method.getAnnotationMirrors())
+                state = annotationState(state, annotation);
             state.bind(method);
         }
-        return dslModel;
+        return model;
+    }
+
+    private <T> T annotationState(CommonState<T> prev, AnnotationMirror annotation) {
+        Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
+        return isKeyword(annotation) ? isNull(parametrized) ? prev.keyword(annotation) : prev.parametrizedKeyword(annotation, parametrized.value()) : prev.annotation(annotation);
     }
 
     private boolean isKeyword(AnnotationMirror annotationMirror) {
@@ -85,18 +84,18 @@ public class DslParser {
         return nonNull(element.getAnnotation(Dsl.class)) || nonNull(element.getEnclosingElement().getAnnotation(Dsl.class));
     }
 
-    public interface MethodState {
-        MethodState annotation(AnnotationMirror annotationMirror);
-        MethodState keyword(AnnotationMirror annotationMirror);
-        MethodState parametrizedKeyword(AnnotationMirror annotationMirror, int count);
+    public interface CommonState<T> {
+        T annotation(AnnotationMirror annotationMirror);
+        T keyword(AnnotationMirror annotationMirror);
+        T parametrizedKeyword(AnnotationMirror annotationMirror, int count);
+    }
+
+    public interface MethodState extends CommonState<MethodState> {
         MethodState parameter(VariableElement variableElement);
         void bind(ExecutableElement method);
     }
 
-    public interface PrefixState {
-        PrefixState annotation(AnnotationMirror annotationMirror);
-        PrefixState keyword(AnnotationMirror annotationMirror);
-        PrefixState parametrizedKeyword(AnnotationMirror annotationMirror, int count);
+    public interface PrefixState extends CommonState<PrefixState> {
         MethodState method(ExecutableElement method);
     }
 

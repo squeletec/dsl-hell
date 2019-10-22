@@ -18,7 +18,6 @@
     <modules>
         <module>dsl-annotations</module>
         <module>dsl-compiler</module>
-        <module>dsl-check-plugin</module>
     </modules>
 
     <url>https://github.com/c0stra/fluent-api-generator/wiki/dsl-hell</url>

@@ -67,6 +67,7 @@ public class DslGenerator {
     }
 
     private void generateDsl(DslModel model) {
+        DslGenerator nested = indent();
         println("package " + model.packageName() + ";");
         println();
         println("import fluent.api.Start;");
@@ -74,13 +75,26 @@ public class DslGenerator {
         println();
         println();
         println("public interface " + model.name() + "{");
+        model.constants().forEach(nested::generateConstant);
         println();
-        indent().generateMethod("static", model.factory());
+        nested.generateMethod("static", model.factory());
         println();
-        indent().generateInterfaceContent(model);
+        nested.generateInterfaceContent(model);
         println();
-        indent().generateDelegate(model);
+        nested.generateDelegate(model);
         println();
+        model.constants().forEach(nested::generateConstantClass);
+        println("}");
+    }
+
+    private void generateConstant(ParameterModel constant) {
+        println("public static final " + constant.type().name() + " " + constant.name() + " = new " + constant.type().name() + "();");
+    }
+
+    private void generateConstantClass(ParameterModel constant) {
+        println();
+        println("public static final class " + constant.type().name() + "{");
+        indent().println("private " + constant.type().name() + "() {}");
         println("}");
     }
 
