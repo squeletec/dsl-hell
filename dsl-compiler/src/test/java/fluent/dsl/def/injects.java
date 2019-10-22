@@ -29,6 +29,4 @@
 
 package fluent.dsl.def;
 
-import fluent.dsl.Parametrized;
-
-@Parametrized public @interface injects { }
+public @interface injects { }

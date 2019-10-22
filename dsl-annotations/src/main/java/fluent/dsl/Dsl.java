@@ -41,8 +41,6 @@ public @interface Dsl {
     String delegateMethod() default "delegate";
     String parameterName() default "impl";
 
-    @interface Parameter { }
-
     @interface Plugin {
         Class<? extends fluent.dsl.plugin.Plugin> value();
     }

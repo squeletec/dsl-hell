@@ -35,4 +35,7 @@ public final class DslUtils {
         return string.isEmpty() ? string : string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
+    public static String simpleName(String string) {
+        return string.substring(string.lastIndexOf('.') + 1);
+    }
 }

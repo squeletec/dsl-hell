@@ -8,8 +8,8 @@ public class BddTest implements BddAutomationDsl.Delegate {
 
     @Test
     public void test() {
-        When("A").injects("").into().destination("");
-        then(SUT).mustSeeOrderWith().orderId("A");
+        When("A").injects("").into("");
+        then(SUT).mustSeeOrderWith("A");
     }
 
     @Override

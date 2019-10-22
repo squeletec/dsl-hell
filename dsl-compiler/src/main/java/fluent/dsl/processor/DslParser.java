@@ -30,19 +30,21 @@
 package fluent.dsl.processor;
 
 import fluent.dsl.Dsl;
-import fluent.dsl.Parametrized;
+import fluent.dsl.Constant;
+import fluent.dsl.model.AnnotationModel;
 import fluent.dsl.model.DslModel;
 import fluent.dsl.model.ParameterModel;
 import fluent.dsl.model.TypeModel;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toList;
+import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 public class DslParser {
@@ -52,16 +54,16 @@ public class DslParser {
         String packageName = dsl.packageName().isEmpty() ? element.getEnclosingElement().toString() : dsl.packageName();
         String dslName = dsl.className().isEmpty() ? element.getSimpleName() + "Dsl" : dsl.className();
         ParameterModel source = new ParameterModel(emptyList(), new TypeModel(emptyList(), element.toString()), dsl.parameterName());
-        return new DslModel(packageName, emptyList(), dslName, dsl.factoryMethod(), source, dsl.delegateMethod());
+        return new DslModel(packageName, new ArrayList<>(), dslName, dsl.factoryMethod(), source, dsl.delegateMethod());
     }
 
     public DslModel parseModel(Element element) {
         DslModel model = createModel(element);
-        PrefixState prefix = start(model);
+        State prefix = start(model);
         for(AnnotationMirror annotation : element.getAnnotationMirrors())
             prefix = annotationState(prefix, annotation);
         for(ExecutableElement method : methodsIn(element.getEnclosedElements())) {
-            MethodState state = prefix.method(method);
+            State state = prefix.method(method.getSimpleName().toString());
             for (VariableElement parameter : method.getParameters()) {
                 for(AnnotationMirror annotation : parameter.getAnnotationMirrors())
                     state = annotationState(state, annotation);
@@ -74,33 +76,33 @@ public class DslParser {
         return model;
     }
 
-    private <T> T annotationState(CommonState<T> prev, AnnotationMirror annotation) {
-        Parametrized parametrized = annotation.getAnnotationType().asElement().getAnnotation(Parametrized.class);
-        return isKeyword(annotation) ? isNull(parametrized) ? prev.keyword(annotation) : prev.parametrizedKeyword(annotation, parametrized.value()) : prev.annotation(annotation);
+    private State annotationState(State prev, AnnotationMirror annotation) {
+        Element element = annotation.getAnnotationType().asElement();
+        String name = element.getSimpleName().toString();
+        if(nonNull(element.getAnnotation(Constant.class))) {
+            return prev.constant(name);
+        }
+        if(isKeyword(element)) {
+            return prev.keyword(name, element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(e -> e.getSimpleName().toString()).collect(toList()));
+        }
+        return prev.annotation(new AnnotationModel(annotation.toString()));
     }
 
-    private boolean isKeyword(AnnotationMirror annotationMirror) {
-        Element element = annotationMirror.getAnnotationType().asElement();
+    private boolean isKeyword(Element element) {
         return nonNull(element.getAnnotation(Dsl.class)) || nonNull(element.getEnclosingElement().getAnnotation(Dsl.class));
     }
 
-    public interface CommonState<T> {
-        T annotation(AnnotationMirror annotationMirror);
-        T keyword(AnnotationMirror annotationMirror);
-        T parametrizedKeyword(AnnotationMirror annotationMirror, int count);
-    }
-
-    public interface MethodState extends CommonState<MethodState> {
-        MethodState parameter(VariableElement variableElement);
+    public interface State {
+        State annotation(AnnotationModel annotationModel);
+        State keyword(String name, List<String> aliases);
+        State method(String name);
+        State constant(String name);
+        State parameter(VariableElement parameterModel);
         void bind(ExecutableElement method);
     }
 
-    public interface PrefixState extends CommonState<PrefixState> {
-        MethodState method(ExecutableElement method);
-    }
-
-    private PrefixState start(DslModel model) {
-        return new DslParserContext(model, model.factory().parameters().get(0)).new StartPrefix();
+    private State start(DslModel model) {
+        return new DslParserState(model, model.factory().parameters().get(0)).new InitialState();
     }
 
 }

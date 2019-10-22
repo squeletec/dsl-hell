@@ -32,12 +32,16 @@ package fluent.dsl;
 import fluent.dsl.def.*;
 import fluent.validation.Check;
 
+import java.util.concurrent.TimeUnit;
+
 @Dsl
 @with public interface Automation {
 
     void injectOrder(@injects String order, @into String destination);
 
     void verifyOrder(@mustSee String order, @in String destination);
+
+    void verifyTime(@mustSee long value, TimeUnit unit);
 
     void verifyOrder(@mustSeeOrderWith String orderId, @only Check<? super String> orderCheck);
 

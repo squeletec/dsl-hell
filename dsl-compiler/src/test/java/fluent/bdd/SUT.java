@@ -1,6 +1,6 @@
 package fluent.bdd;
 
-import fluent.dsl.Dsl;
+import fluent.dsl.Constant;
 
-@Dsl
+@Constant
 public @interface SUT { }

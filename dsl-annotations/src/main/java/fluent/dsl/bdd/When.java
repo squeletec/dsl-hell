@@ -1,9 +1,7 @@
 package fluent.dsl.bdd;
 
-import fluent.dsl.Parametrized;
-
-@Parametrized
 public @interface When {
+    int value() default 0;
     // Aliases
     @interface Given {}
     @interface and {}

@@ -14,22 +14,16 @@ Automation interface with annotation metadata describing, how to invoke it using
 public interface Automation {
 
     // These annotations can be externalzed
-    public @interface User {}
-    @Keyword public @interface enters {}
-    @Keyword public @interface and {}
-    @Keyword public @interface at {}
-    @Keyword public @interface must {}
-    @Keyword public @interface see {}
-    @Keyword public @interface with {}
-    @Keyword public @interface order {}
+    @interface User {}
+    @interface entersUsername {}
+    @interface andPassword {}
+    @interface atUrl {}
+    @interface mustSee {}
+    @interface entersOrder {}
 
-    void userLogin(@User @enters String username, @and String password, @at String url);
+    void userLogin(@entersUsername String username, @andPassword String password, @atUrl String url);
 
-    void verifyLogonMessage(@User @must @see String message);
-
-    void injectOrder(@User @enters @FluentBuilder @FluentCheck(factoryMethod = "with") Order order, @at String destination);
-    
-    void exactOrderVerification(@User @must @see @order @with String orderId, Check<Object> check);
+    void verifyLogonMessage(@mustSee @message String message);
 
 }
 ```
@@ -37,6 +31,9 @@ public interface Automation {
 Generated fluent interface sentence examples
 
 ```java
+import static fluent.api.bdd.Bdd.When;
+import static fluent.api.bdd.Bdd.then;
+
 public class GeneratedUserDslTest {
 
     private final User John = newUser(mock(Automation.class));
@@ -62,12 +59,6 @@ public class GeneratedUserDslTest {
     public void testDirectDsl() {
         John.entersUsername(validUserName).andPassword(validPassword).atUrl(loginPage);
         John.mustSeeMessage("Welcome " + validUserName + "!");
-    }
-
-    @Test
-    public void testFluentEntity() {
-        When (John). entersOrder (new OrderBuilder().orderId("A").side(BUY).build()). atDestination ("DEST");
-        then (John). mustSeeOrderWithOrderId ("A"). andCriteria( with().side(BUY) );
     }
 
 }

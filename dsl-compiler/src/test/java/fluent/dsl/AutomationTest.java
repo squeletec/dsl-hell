@@ -31,6 +31,7 @@ package fluent.dsl;
 
 import org.testng.annotations.Test;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -40,11 +41,18 @@ public class AutomationTest {
     public void test() {
         Automation mock = mock(Automation.class);
         AutomationDsl dsl = AutomationDsl.create(mock);
-        dsl.with().injects("Order 1").into().destination("dest");
-        dsl.with().mustSee().order("Order 1").in().destination("dest");
-        int aaa = dsl.with().into().salt("AAA");
+        dsl.with().injects("Order 1").into("dest");
+        dsl.with().mustSee("Order 1").in("dest");
+        int aaa = dsl.with().into("AAA");
         verify(mock).injectOrder("Order 1", "dest");
         verify(mock).verifyOrder("Order 1", "dest");
     }
 
+    @Test
+    public void testTime() {
+        Automation mock = mock(Automation.class);
+        AutomationDsl dsl = AutomationDsl.create(mock);
+        dsl.with().mustSee(2, HOURS);
+        verify(mock).verifyTime(2, HOURS);
+    }
 }
