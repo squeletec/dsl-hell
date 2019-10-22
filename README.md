@@ -63,3 +63,22 @@ public class GeneratedUserDslTest {
 
 }
 ```
+
+## Defining DSL
+
+DSL is generated based on metadata defined using annotations.
+
+1. Class or interface annotated with `@Dsl` will be processed, and used to build DSL for it.
+2. Annotation annotated with `@Dsl` will be identified as description of the DSL sentences to be bound
+   to the model's methods.
+3. Annotations defined in class / interface annotated by `@Dsl`, or defined in package annotated with `@Dsl`
+   will be identified as description of the DSL sentences.
+4. Each annotation results in a method, unless it is annotated also with `@Constant`.
+5. Annotation annotated `@Constant` generates extra singleton class which can is used as parameter
+   for current method.
+6. Dsl method will use all parameters until next `@Dsl` annotation. Those parameters can be either
+   constants generated using annotation above, or real binding method's parameters.
+7. If first parameter of binding method is annotated with `@Dsl` annotated annotation, this is used in DSL,
+   and real method name is ignored in DSL. Otherwise method name is used also in DSL.
+8. Method, that doesn't use any `@Dsl` annotated annotations results in it's copy in final DSL.
+   

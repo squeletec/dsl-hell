@@ -79,17 +79,27 @@ public class DslParser {
     private State annotationState(State prev, AnnotationMirror annotation) {
         Element element = annotation.getAnnotationType().asElement();
         String name = element.getSimpleName().toString();
-        if(nonNull(element.getAnnotation(Constant.class))) {
+        if(nonNull(element.getAnnotation(Constant.class)))
             return prev.constant(name);
-        }
-        if(isKeyword(element)) {
+        if(isKeyword(element))
             return prev.keyword(name, element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(e -> e.getSimpleName().toString()).collect(toList()));
-        }
         return prev.annotation(new AnnotationModel(annotation.toString()));
     }
 
     private boolean isKeyword(Element element) {
-        return nonNull(element.getAnnotation(Dsl.class)) || nonNull(element.getEnclosingElement().getAnnotation(Dsl.class));
+        if(nonNull(element.getAnnotation(Dsl.class)))
+            return true;
+        Element enclosingElement = element.getEnclosingElement();
+        if(nonNull(enclosingElement))
+            return isKeyword(enclosingElement);
+        try {
+            Element packageElement = (Element) element.getClass().getField("owner").get(element);
+            if(nonNull(packageElement))
+                return isKeyword(packageElement);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public interface State {
