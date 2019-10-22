@@ -81,4 +81,4 @@ DSL is generated based on metadata defined using annotations.
 7. If first parameter of binding method is annotated with `@Dsl` annotated annotation, this is used in DSL,
    and real method name is ignored in DSL. Otherwise method name is used also in DSL.
 8. Method, that doesn't use any `@Dsl` annotated annotations results in it's copy in final DSL.
-   
+9. DSL annotations used on the method itself are used as suffix.

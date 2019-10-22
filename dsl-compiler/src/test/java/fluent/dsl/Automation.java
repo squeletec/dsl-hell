@@ -45,6 +45,10 @@ import java.util.concurrent.TimeUnit;
 
     void verifyOrder(@mustSeeOrderWith String orderId, @only Check<? super String> orderCheck);
 
+    void copy(String value);
+
+    void emptyMethod();
+
     static int generate(@into String salt) {
         return 5;
     }

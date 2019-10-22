@@ -53,6 +53,8 @@ public class AutomationTest {
         Automation mock = mock(Automation.class);
         AutomationDsl dsl = AutomationDsl.create(mock);
         dsl.with().mustSee(2, HOURS);
+        dsl.with().emptyMethod();
         verify(mock).verifyTime(2, HOURS);
+        verify(mock).emptyMethod();
     }
 }
