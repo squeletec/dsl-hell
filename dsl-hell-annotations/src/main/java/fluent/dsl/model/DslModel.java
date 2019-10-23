@@ -44,8 +44,8 @@ public class DslModel extends TypeModel {
     public DslModel(String packageName, List<AnnotationModel> annotations, String name, String factory, ParameterModel source, String delegate) {
         super(annotations, name);
         this.packageName = packageName;
-        this.factory = new KeywordModel(emptyList(), this, factory, emptyList(), singletonList(source), null);
-        this.delegate = new KeywordModel(emptyList(), this, delegate, emptyList(), emptyList(), null);
+        this.factory = new KeywordModel(emptyList(), this, factory, emptyList(), singletonList(source), null, false);
+        this.delegate = new KeywordModel(emptyList(), this, delegate, emptyList(), emptyList(), null, false);
     }
 
     public String packageName() {

@@ -36,12 +36,14 @@ public class KeywordModel extends BaseModel {
     private final List<String> aliases;
     private final List<ParameterModel> parameters;
     private final BindingModel binding;
-    public KeywordModel(List<AnnotationModel> annotations, TypeModel type, String name, List<String> aliases, List<ParameterModel> parameters, BindingModel binding) {
+    private final boolean useVarargs;
+    public KeywordModel(List<AnnotationModel> annotations, TypeModel type, String name, List<String> aliases, List<ParameterModel> parameters, BindingModel binding, boolean useVarargs) {
         super(annotations, name);
         this.type = type;
         this.aliases = aliases;
         this.parameters = parameters;
         this.binding = binding;
+        this.useVarargs = useVarargs;
     }
     public TypeModel type() {
         return hasBinding() ? binding.method().type() : type;

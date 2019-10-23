@@ -81,30 +81,32 @@ public class DslParser {
         String name = element.getSimpleName().toString();
         if(nonNull(element.getAnnotation(Constant.class)))
             return prev.constant(name);
-        if(isKeyword(element))
-            return prev.keyword(name, element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(e -> e.getSimpleName().toString()).collect(toList()));
+        Dsl dsl = getDsl(element);
+        if(nonNull(dsl))
+            return prev.keyword(name, element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(e -> e.getSimpleName().toString()).collect(toList()), dsl.useVarargs());
         return prev.annotation(new AnnotationModel(annotation.toString()));
     }
 
-    private boolean isKeyword(Element element) {
-        if(nonNull(element.getAnnotation(Dsl.class)))
-            return true;
+    private Dsl getDsl(Element element) {
+        Dsl dsl = element.getAnnotation(Dsl.class);
+        if(nonNull(dsl))
+            return dsl;
         Element enclosingElement = element.getEnclosingElement();
         if(nonNull(enclosingElement))
-            return isKeyword(enclosingElement);
+            return getDsl(enclosingElement);
         try {
             Element packageElement = (Element) element.getClass().getField("owner").get(element);
             if(nonNull(packageElement))
-                return isKeyword(packageElement);
+                return getDsl(packageElement);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }
-        return false;
+        return null;
     }
 
     public interface State {
         State annotation(AnnotationModel annotationModel);
-        State keyword(String name, List<String> aliases);
+        State keyword(String name, List<String> aliases, boolean useVarargs);
         State method(String name);
         State constant(String name);
         State parameter(VariableElement parameterModel);
