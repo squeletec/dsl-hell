@@ -36,6 +36,7 @@ public final class DslUtils {
     }
 
     public static String simpleName(String string) {
-        return string.substring(string.lastIndexOf('.') + 1);
+        string = string.split("<")[0];
+        return string.substring(string.lastIndexOf('.') + 1).replaceAll("\\[]", "Array");
     }
 }

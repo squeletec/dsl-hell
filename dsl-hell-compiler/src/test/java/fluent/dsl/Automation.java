@@ -32,6 +32,7 @@ package fluent.dsl;
 import fluent.dsl.def.*;
 import fluent.validation.Check;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Dsl
@@ -44,6 +45,12 @@ import java.util.concurrent.TimeUnit;
     void verifyTime(@mustSee long value, TimeUnit unit);
 
     void verifyOrder(@mustSeeOrderWith String orderId, @only Check<? super String> orderCheck);
+
+    void verifyArray(@mustSee String[] values, @in String target);
+
+    @only void verifyGeneric(@mustSee List<String> strings);
+
+    @only void verifyVararg(@mustSee int... ints);
 
     void copy(String value);
 
