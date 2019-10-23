@@ -44,14 +44,16 @@ public class DslGenerator {
 
     private final PrintWriter source;
     private final String prefix;
+    private final boolean useVarargs;
 
-    private DslGenerator(PrintWriter source, String prefix) {
+    private DslGenerator(PrintWriter source, String prefix, boolean useVarargs) {
         this.source = source;
         this.prefix = prefix;
+        this.useVarargs = useVarargs;
     }
 
     private DslGenerator indent() {
-        return new DslGenerator(source, prefix + tab);
+        return new DslGenerator(source, prefix + tab, useVarargs);
     }
 
     private void println(String line) {
@@ -62,9 +64,9 @@ public class DslGenerator {
         source.println();
     }
 
-    public static void generateFrom(Writer writer, DslModel model) {
+    public static void generateFrom(Writer writer, DslModel model, boolean useVarargs) {
         try(PrintWriter source = new PrintWriter(writer)) {
-            new DslGenerator(source, "").generateDsl(model);
+            new DslGenerator(source, "", useVarargs).generateDsl(model);
         }
     }
 
@@ -159,7 +161,7 @@ public class DslGenerator {
 
     private String parameters(KeywordModel model) {
         List<String> collect = model.parameters().stream().map(p -> p.type().name() + " " + p.name()).collect(Collectors.toList());
-        if(!collect.isEmpty()) {
+        if(useVarargs && !collect.isEmpty()) {
             collect.set(collect.size() - 1, collect.get(collect.size() - 1).replace("[] ", "... "));
         }
         return String.join(", ", collect);

@@ -64,7 +64,7 @@ public class DslAnnotationProcessor extends AbstractProcessor {
     private void process(Element element) {
         try {
             DslModel model = factory.parseModel(element);
-            DslGenerator.generateFrom(processingEnv.getFiler().createSourceFile(model.toString()).openWriter(), model);
+            DslGenerator.generateFrom(processingEnv.getFiler().createSourceFile(model.toString()).openWriter(), model, element.getAnnotation(Dsl.class).useVarargs());
         } catch (Throwable throwable) {
             processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);
         }

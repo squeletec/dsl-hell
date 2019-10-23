@@ -40,6 +40,7 @@ public @interface Dsl {
     String factoryMethod() default "create";
     String delegateMethod() default "delegate";
     String parameterName() default "impl";
+    boolean useVarargs() default true;
 
     @interface Plugin {
         Class<? extends fluent.dsl.plugin.Plugin> value();
