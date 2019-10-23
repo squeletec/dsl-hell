@@ -33,6 +33,8 @@ import fluent.dsl.model.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -156,7 +158,11 @@ public class DslGenerator {
     }
 
     private String parameters(KeywordModel model) {
-        return model.parameters().stream().map(p -> p.type().name() + " " + p.name()).collect(joining(", "));
+        List<String> collect = model.parameters().stream().map(p -> p.type().name() + " " + p.name()).collect(Collectors.toList());
+        if(!collect.isEmpty()) {
+            collect.set(collect.size() - 1, collect.get(collect.size() - 1).replace("[] ", "... "));
+        }
+        return String.join(", ", collect);
     }
 
     private String args(KeywordModel model) {
