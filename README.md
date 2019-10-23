@@ -1,7 +1,29 @@
 # DSL HELL
+![Released version](https://img.shields.io/maven-central/v/foundation.fluent.api/dsl-hell.svg)
+
 Extreme Java DSL code generator.
 
-No release done yet.
+Add dependencies:
+
+Annotations need to be standard dependency.
+```xml
+<dependency>
+    <groupId>foundation.fluent.api</groupId>
+    <artifactId>dsl-hell-annotations</artifactId>
+    <version>${dsl-hell.version}</version>
+</dependency>
+```
+
+Annotation processor, can be standard dependency:
+```xml
+<dependency>
+    <groupId>foundation.fluent.api</groupId>
+    <artifactId>dsl-hell-annotations</artifactId>
+    <version>${dsl-hell.version}</version>
+</dependency>
+```
+
+or annotation processor specified in compiler plugin.
 
 Annotation processing based code generator used to generate fluent API binding to  simple automation methods.
 
