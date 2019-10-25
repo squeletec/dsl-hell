@@ -86,7 +86,7 @@ public class DslParserState {
         }
         private Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
             String className = capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type())).collect(joining());
-            return node.add(returnTypeModel, className, methodName, parameters, bindingModel);
+            return node.add(returnTypeModel, className, methodName, aliases, parameters, bindingModel);
         }
     }
 

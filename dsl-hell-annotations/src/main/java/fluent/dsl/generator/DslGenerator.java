@@ -36,6 +36,7 @@ import fluent.dsl.model.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -134,12 +135,11 @@ public class DslGenerator {
 
     private void generateSignature(MethodModel model) {
         println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
-        /*
-        model.aliases().forEach(alias -> {
-            println("default " + model.returnType() + " " + alias + "(" + parameters(model) + ") {");
+        ((List<String>)model.metadata().getOrDefault("aliases", Collections.emptyList())).forEach(alias -> {
+            println("default " + generic(model) + " " + model.returnType() + " " + alias + "(" + parameters(model) + ") {");
             indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
             println("}");
-        });*/
+        });
     }
 
     private String returnType(MethodModel model) {

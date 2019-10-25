@@ -8,6 +8,7 @@ public class BddTest implements BddAutomationDsl.Delegate {
 
     @Test
     public void test() {
+        Given("A").injects("").into("");
         When("A").injects("").into("");
         then(SUT).mustSeeOrderWith("A");
     }

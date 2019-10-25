@@ -35,7 +35,7 @@ final class Node implements Supplier<List<MethodModel>> {
         return out;
     }
 
-    public Node(boolean isStatic, TypeModel typeModel, List<TypeModel> typeParameters, String packageName, String className, String methodName, List<VarModel> parameters, StatementModel... bindingModel) {
+    public Node(boolean isStatic, TypeModel typeModel, List<TypeModel> typeParameters, String packageName, String className, String methodName, List<String> aliases, List<VarModel> parameters, StatementModel... bindingModel) {
         Map<String, TypeModel> map = new LinkedHashMap<>();
         typeParameters.forEach(p -> map.put(p.fullName(), p));
         usedTypeParameters(parameters).forEach(t -> map.put(t.fullName(), t));
@@ -45,10 +45,11 @@ final class Node implements Supplier<List<MethodModel>> {
         }
         List<TypeModel> methodTypeParameters = isStatic ? newParameters : newParameters.subList(typeParameters.size(), newParameters.size());
         this.methodModel = DslModelFactory.method(emptyList(), isStatic, true, methodTypeParameters, typeModel, methodName, parameters, bindingModel);
+        this.methodModel.metadata().put("aliases", aliases);
     }
 
-    public Node add(TypeModel typeModel, String className, String methodName, List<VarModel> parameters, StatementModel[] bindingModel) {
-        return nodes.computeIfAbsent(className, key -> new Node(false, typeModel, methodModel.returnType().typeParameters(), "", className, methodName, parameters, bindingModel));
+    public Node add(TypeModel typeModel, String className, String methodName, List<String> aliases, List<VarModel> parameters, StatementModel[] bindingModel) {
+        return nodes.computeIfAbsent(className, key -> new Node(false, typeModel, methodModel.returnType().typeParameters(), "", className, methodName, aliases, parameters, bindingModel));
     }
 
     @Override

@@ -31,7 +31,9 @@ package fluent.api.model.lazy;
 import fluent.api.model.AnnotationModel;
 import fluent.api.model.ElementModel;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class LazyElementModel implements ElementModel {
@@ -39,6 +41,7 @@ public class LazyElementModel implements ElementModel {
     private final Lazy<List<AnnotationModel>> lazyAnnotations;
     private final boolean isStatic;
     private final boolean isPublic;
+    private final Map<String, Object> metadata = new HashMap<>();
 
     public LazyElementModel(Supplier<List<AnnotationModel>> annotationSupplier, boolean isStatic, boolean isPublic) {
         this.lazyAnnotations = Lazy.lazy(annotationSupplier);
@@ -59,6 +62,11 @@ public class LazyElementModel implements ElementModel {
     @Override
     public boolean isPublic() {
         return isPublic;
+    }
+
+    @Override
+    public Map<String, Object> metadata() {
+        return metadata;
     }
 
 }

@@ -29,6 +29,7 @@
 package fluent.api.model;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ElementModel {
 
@@ -37,5 +38,7 @@ public interface ElementModel {
     boolean isStatic();
 
     boolean isPublic();
+
+    Map<String, Object> metadata();
 
 }
