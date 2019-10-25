@@ -45,6 +45,7 @@ public class LazyTypeModel extends LazyGenericModel implements TypeModel {
     private final String packageName;
     private final String fullName;
     private final boolean isArray;
+    private final boolean isTypVariable;
     private final Lazy<TypeModel> rawType;
     private final Lazy<TypeModel> componentType;
     private final Lazy<List<MethodModel>> methods;
@@ -67,6 +68,7 @@ public class LazyTypeModel extends LazyGenericModel implements TypeModel {
         this.packageName = packageName;
         this.fullName = fullName;
         this.isArray = isArray;
+        this.isTypVariable = false;
         this.rawType = lazy(argOrThis(rawTypeSupplier));
         this.componentType = lazy(argOrThis(componentTypeSupplier));
         this.methods = lazy(methodsSupplier);
@@ -84,12 +86,14 @@ public class LazyTypeModel extends LazyGenericModel implements TypeModel {
                          String packageName,
                          String simpleName,
                          String fullName,
+                         boolean isTypVariable,
                          Supplier<List<MethodModel>> methodsSupplier,
                          Supplier<List<VarModel>> fieldsSupplier) {
         super(annotationSupplier, isStatic, isPublic, typeParameters);
         this.simpleName = simpleName;
         this.packageName = packageName;
         this.isArray = false;
+        this.isTypVariable = isTypVariable;
         this.fullName = fullName;
         this.rawType = lazy(this);
         this.componentType = lazy(this);
@@ -116,6 +120,11 @@ public class LazyTypeModel extends LazyGenericModel implements TypeModel {
     @Override
     public boolean isArray() {
         return isArray;
+    }
+
+    @Override
+    public boolean isTypeVariable() {
+        return isTypVariable;
     }
 
     @Override

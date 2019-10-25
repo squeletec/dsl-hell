@@ -40,6 +40,8 @@ public interface TypeModel extends GenericModel {
 
     boolean isArray();
 
+    boolean isTypeVariable();
+
     TypeModel rawType();
 
     TypeModel componentType();

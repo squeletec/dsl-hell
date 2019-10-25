@@ -64,7 +64,7 @@ public class DslParser {
         String packageName = dsl.packageName().isEmpty() ? model.packageName() : dsl.packageName();
         String dslName = dsl.className().isEmpty() ? model.rawType().simpleName() + "Dsl" : dsl.className();
         VarModel source = factory.parameter(emptyList(), model, dsl.parameterName());
-        Node node = new Node(null, model.typeParameters(), packageName, dslName, dsl.factoryMethod(), singletonList(source));
+        Node node = new Node(true, null, model.typeParameters(), packageName, dslName, dsl.factoryMethod(), singletonList(source));
         DslModel dslModel = factory.dsl(node.methodModel(), dsl.delegateMethod());
         State prefix = start(dslModel, node);
         for(AnnotationMirror annotation : element.getAnnotationMirrors())

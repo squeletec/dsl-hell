@@ -6,9 +6,7 @@ import fluent.api.model.TypeModel;
 import fluent.api.model.VarModel;
 import fluent.dsl.model.DslModelFactory;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static fluent.dsl.model.DslModelFactory.type;
@@ -23,19 +21,38 @@ final class Node implements Supplier<List<MethodModel>> {
     private Node(MethodModel methodModel) {
         this.methodModel = methodModel;
     }
-    public Node(TypeModel typeModel, List<TypeModel> typeParameters, String packageName, String className, String methodName, List<VarModel> parameters, StatementModel... bindingModel) {
+
+    private void traverse(TypeModel t, List<TypeModel> out) {
+        if(t.isTypeVariable())
+            out.add(t);
+        else
+            t.typeParameters().forEach(p -> traverse(p, out));
+    }
+
+    private List<TypeModel> usedTypeParameters(List<VarModel> parameters) {
+        List<TypeModel> out = new ArrayList<>();
+        parameters.stream().map(VarModel::type).forEach(t -> traverse(t, out));
+        return out;
+    }
+
+    public Node(boolean isStatic, TypeModel typeModel, List<TypeModel> typeParameters, String packageName, String className, String methodName, List<VarModel> parameters, StatementModel... bindingModel) {
+        Map<String, TypeModel> map = new LinkedHashMap<>();
+        typeParameters.forEach(p -> map.put(p.fullName(), p));
+        usedTypeParameters(parameters).forEach(t -> map.put(t.fullName(), t));
+        ArrayList<TypeModel> newParameters = new ArrayList<>(map.values());
         if(isNull(typeModel)) {
-            typeModel = type(emptyList(), typeParameters, packageName, className, this);
+            typeModel = type(emptyList(), newParameters, packageName, className, this);
         }
-        this.methodModel = DslModelFactory.method(emptyList(), false, true, emptyList(), typeModel, methodName, parameters, bindingModel);
+        List<TypeModel> methodTypeParameters = isStatic ? newParameters : newParameters.subList(typeParameters.size(), newParameters.size());
+        this.methodModel = DslModelFactory.method(emptyList(), isStatic, true, methodTypeParameters, typeModel, methodName, parameters, bindingModel);
     }
-    public static Node node() {
-        return new Node(null);
-    }
+
     public Node add(TypeModel typeModel, String className, String methodName, List<VarModel> parameters, StatementModel[] bindingModel) {
-        return nodes.computeIfAbsent(className, key -> new Node(typeModel, methodModel.returnType().typeParameters(), "", className, methodName, parameters, bindingModel));
+        return nodes.computeIfAbsent(className, key -> new Node(false, typeModel, methodModel.returnType().typeParameters(), "", className, methodName, parameters, bindingModel));
     }
-    @Override public List<MethodModel> get() {
+
+    @Override
+    public List<MethodModel> get() {
         return nodes.values().stream().map(n -> n.methodModel).collect(toList());
     }
 

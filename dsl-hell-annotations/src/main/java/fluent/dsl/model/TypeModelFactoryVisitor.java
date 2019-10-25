@@ -64,7 +64,7 @@ public class TypeModelFactoryVisitor implements TypeVisitor<TypeModel, Element> 
         return visit(t, types.asElement(t));
     }
 
-    private TypeModel visitDefault(TypeMirror t) {
+    private TypeModel visitDefault(TypeMirror t, boolean isTypeVariable) {
         return new LazyTypeModel(
                 Collections::emptyList,
                 true,
@@ -73,6 +73,7 @@ public class TypeModelFactoryVisitor implements TypeVisitor<TypeModel, Element> 
                 "",
                 t.toString(),
                 t.toString(),
+                isTypeVariable,
                 Collections::emptyList,
                 Collections::emptyList
         );
@@ -80,7 +81,7 @@ public class TypeModelFactoryVisitor implements TypeVisitor<TypeModel, Element> 
 
     @Override
     public TypeModel visitPrimitive(PrimitiveType t, Element element) {
-        return visitDefault(t);
+        return visitDefault(t, false);
     }
 
     @Override
@@ -154,12 +155,14 @@ public class TypeModelFactoryVisitor implements TypeVisitor<TypeModel, Element> 
 
     @Override
     public TypeModel visitTypeVariable(TypeVariable t, Element typeElement) {
-        return visitDefault(t);
+        return visitDefault(t, true);
     }
 
     @Override
     public TypeModel visitWildcard(WildcardType t, Element typeElement) {
-        return null;
+        if(t.getSuperBound() != null)
+            return visit(t.getSuperBound());
+        return visit(t.getExtendsBound());
     }
 
     @Override
@@ -169,7 +172,7 @@ public class TypeModelFactoryVisitor implements TypeVisitor<TypeModel, Element> 
 
     @Override
     public TypeModel visitNoType(NoType t, Element typeElement) {
-        return visitDefault(t);
+        return visitDefault(t, true);
     }
 
     @Override

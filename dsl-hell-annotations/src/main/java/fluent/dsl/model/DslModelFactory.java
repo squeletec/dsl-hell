@@ -22,11 +22,6 @@ public class DslModelFactory {
         this.visitor = visitor;
     }
 
-    public TypeModel type(List<AnnotationModel> emptyList, String fullName) {
-        int i = fullName.lastIndexOf('.');
-        return i < 0 ? type(emptyList, "", fullName) : type(emptyList, fullName.substring(0, i), fullName.substring(i + 1));
-    }
-
     public VarModel parameter(List<AnnotationModel> emptyList, TypeModel type, String name) {
         return new LazyVarModel(() -> emptyList, false, true, type, name);
     }
@@ -47,7 +42,7 @@ public class DslModelFactory {
     }
 
     public TypeModel type(List<AnnotationModel> annotations, String packageName, String simpleName) {
-        return new LazyTypeModel(() -> annotations, true, true, Collections::emptyList, packageName, simpleName, packageName.isEmpty() ? simpleName : packageName + "." + simpleName, Collections::emptyList, Collections::emptyList);
+        return new LazyTypeModel(() -> annotations, true, true, Collections::emptyList, packageName, simpleName, packageName.isEmpty() ? simpleName : packageName + "." + simpleName, false, Collections::emptyList, Collections::emptyList);
     }
 
     public TypeModel type(Element element) {
@@ -69,6 +64,7 @@ public class DslModelFactory {
                 packageName,
                 simpleName,
                 packageName.isEmpty() ? simpleName : packageName + "." + simpleName,
+                false,
                 methodSupplier,
                 Collections::emptyList
         );

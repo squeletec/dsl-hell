@@ -85,7 +85,7 @@ public class DslGenerator {
         println("public interface " + model.type().simpleName() + "{");
         model.constants().forEach(nested::generateConstant);
         println();
-        nested.generateMethod("static " + generic(model.type()), model.factory());
+        nested.generateMethod("static ", model.factory());
         println();
         nested.generateInterfaceContent(model.type());
         println();
@@ -133,7 +133,7 @@ public class DslGenerator {
     }
 
     private void generateSignature(MethodModel model) {
-        println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
+        println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
         /*
         model.aliases().forEach(alias -> {
             println("default " + model.returnType() + " " + alias + "(" + parameters(model) + ") {");
@@ -147,7 +147,7 @@ public class DslGenerator {
     }
 
     private void generateMethod(String modifiers, MethodModel model) {
-        println(modifiers + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
+        println(modifiers + generic(model) + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
         DslGenerator nested = indent();
         if(model.body().isEmpty()) {
             nested.generateReturnAnonymousClass(model.returnType());
