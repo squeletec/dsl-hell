@@ -26,7 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 package fluent.dsl.generator;
 
 import fluent.api.model.MethodModel;
@@ -43,6 +42,13 @@ import java.util.stream.Collectors;
 import static fluent.dsl.model.DslUtils.generic;
 import static java.util.stream.Collectors.joining;
 
+/**
+ * Generator of the DSL, operating on model of classes, making it up.
+ * Whole DSL is now generated as one top level interface containing nested interfaces of all possible chaining.
+ * Subsequent chain is always again nested, so that easy scoping prevents conflits across DSL branches.
+ *
+ * As the approach is heavily recursive and needs indentation etc. it's not a good fit for any template usage.
+ */
 public class DslGenerator {
 
     private static final String tab = "\t";

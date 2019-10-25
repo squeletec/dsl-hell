@@ -26,14 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 package fluent.dsl.processor;
 
 import fluent.dsl.Dsl;
 import fluent.dsl.generator.DslGenerator;
 import fluent.dsl.model.DslModel;
 import fluent.dsl.model.DslModelFactory;
-import fluent.dsl.model.TypeModelFactoryVisitor;
+import fluent.api.model.ModelFactory;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -58,7 +57,7 @@ public class DslAnnotationProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for(Element element : roundEnv.getElementsAnnotatedWith(Dsl.class))
             if(modelTypes.contains(element.getKind()))
-                process(element, new DslParser(new DslModelFactory(new TypeModelFactoryVisitor(processingEnv.getElementUtils(), processingEnv.getTypeUtils()))));
+                process(element, new DslParser(new DslModelFactory(new ModelFactory(processingEnv.getElementUtils(), processingEnv.getTypeUtils()))));
         return true;
     }
 

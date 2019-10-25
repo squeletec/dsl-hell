@@ -26,19 +26,78 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 package fluent.dsl;
 
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
 
+/**
+ * Basic annotation, that has 2 main features:
+ *
+ *  1. It triggers code generation, when used on standard class or interface (and dsh-hell-compiler annotation
+ *     processor is available to the compiler).
+ *     In that case the annotated class / interface serves as the automation "binding", and fluent interface
+ *     allowing use of all methods but with descriptive fluent java DSL will be generated.
+ *
+ *  2. When used on an annotation, package, or class / annotation, tha has nested annotations in it, it marks
+ *     annotations within it's scope as keywords for the DSL. So they can be used in "method binding" signature
+ *     to instruct the annotation processor, what the DSL sentences should look like.
+ */
 @Target({TYPE, ANNOTATION_TYPE, PACKAGE})
 public @interface Dsl {
+
+    /**
+     * Applies only to usage #1 (on class / interface)
+     * It defines the package, in which the generated root DSL interface will be generated.
+     *
+     * @return Desired package name. If the value is empty string, then package name from the annotated
+     * class / interface is used.
+     */
     String packageName() default "";
+
+    /**
+     * Applies only to usage #1 (on class / interface)
+     * It defines the name, of the root DSL generated interface.
+     *
+     * @return Desired name. If the value is empty, then simple name of the annotated class / interface with
+     *         suffix "Dsl" is used.
+     */
     String className() default "";
+
+    /**
+     * Applies only to usage #1 (on class / interface)
+     * It defines name of the factory method, which creates instances of the root DSL.
+     *
+     * @return Name of the factory method. Default is "create".
+     */
     String factoryMethod() default "create";
+
+    /**
+     * Applies only to usage #1 (on class / interface)
+     * If defines name of method, using which it's possible to create simple delegate of the DSL.
+     *
+     * @return Name of the delegate method. Default is "delegate".
+     */
     String delegateMethod() default "delegate";
+
+    /**
+     * Applies only to usage #1 (on class / interface)
+     * It defines name of the parameter used in the generated factory method, which is used to pass
+     * the instance of the DSL binding class / instance.
+     *
+     * @return Factory parameter name.
+     */
     String parameterName() default "impl";
+
+    /**
+     * Applies to both usages (however not yet properly reflected when used in use case #2)
+     * Flag indicating, if last parameter of type array in DSL method should be automatically convert
+     * to vararg. Varargs in DSL are very convenient, and mostly DSL splits parameters into many methods,
+     * each of them can turn into vararg.
+     *
+     * @return Flag indicating auto conversion to vararg. Default is to auto-convert.
+     */
     boolean useVarargs() default true;
+
 }

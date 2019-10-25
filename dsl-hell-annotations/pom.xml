@@ -38,12 +38,4 @@
 
     <artifactId>dsl-hell-annotations</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>foundation.fluent.api</groupId>
-            <artifactId>dsl-hell-model</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
-
 </project>
