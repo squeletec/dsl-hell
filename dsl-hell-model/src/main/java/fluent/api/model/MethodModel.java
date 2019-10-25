@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,18 +26,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model;
 
-package fluent.dsl.model;
+import java.util.List;
 
-public class AnnotationModel {
-    private final String annotation;
+public interface MethodModel extends GenericModel {
 
-    public AnnotationModel(String annotation) {
-        this.annotation = annotation;
-    }
+    TypeModel returnType();
 
-    @Override
-    public String toString() {
-        return annotation;
-    }
+    String name();
+
+    List<VarModel> parameters();
+
+    boolean returnsValue();
+
+    List<StatementModel> body();
+
 }

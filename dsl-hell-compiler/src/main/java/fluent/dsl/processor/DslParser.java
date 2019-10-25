@@ -29,19 +29,22 @@
 
 package fluent.dsl.processor;
 
+import fluent.api.model.AnnotationModel;
+import fluent.api.model.MethodModel;
+import fluent.api.model.TypeModel;
+import fluent.api.model.VarModel;
 import fluent.dsl.Dsl;
 import fluent.dsl.Constant;
-import fluent.dsl.model.AnnotationModel;
 import fluent.dsl.model.DslModel;
-import fluent.dsl.model.ParameterModel;
-import fluent.dsl.model.TypeModel;
+import fluent.dsl.model.DslModelFactory;
 
 import javax.lang.model.element.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
@@ -49,17 +52,21 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 
 public class DslParser {
 
-    private DslModel createModel(Element element) {
-        Dsl dsl = element.getAnnotation(Dsl.class);
-        String packageName = dsl.packageName().isEmpty() ? element.getEnclosingElement().toString() : dsl.packageName();
-        String dslName = dsl.className().isEmpty() ? element.getSimpleName() + "Dsl" : dsl.className();
-        ParameterModel source = new ParameterModel(emptyList(), new TypeModel(emptyList(), element.toString()), dsl.parameterName());
-        return new DslModel(packageName, new ArrayList<>(), dslName, dsl.factoryMethod(), source, dsl.delegateMethod());
+    private final DslModelFactory factory;
+
+    public DslParser(DslModelFactory factory) {
+        this.factory = factory;
     }
 
     public DslModel parseModel(Element element) {
-        DslModel model = createModel(element);
-        State prefix = start(model);
+        TypeModel model = factory.type(element);
+        Dsl dsl = element.getAnnotation(Dsl.class);
+        String packageName = dsl.packageName().isEmpty() ? model.packageName() : dsl.packageName();
+        String dslName = dsl.className().isEmpty() ? model.rawType().simpleName() + "Dsl" : dsl.className();
+        VarModel source = factory.parameter(emptyList(), model, dsl.parameterName());
+        Node node = new Node(null, model.typeParameters(), packageName, dslName, dsl.factoryMethod(), singletonList(source));
+        DslModel dslModel = factory.dsl(node.methodModel(), dsl.delegateMethod());
+        State prefix = start(dslModel, node);
         for(AnnotationMirror annotation : element.getAnnotationMirrors())
             prefix = annotationState(prefix, annotation);
         for(ExecutableElement method : methodsIn(element.getEnclosedElements())) {
@@ -73,7 +80,7 @@ public class DslParser {
                 state = annotationState(state, annotation);
             state.bind(method);
         }
-        return model;
+        return dslModel;
     }
 
     private State annotationState(State prev, AnnotationMirror annotation) {
@@ -84,7 +91,7 @@ public class DslParser {
         Dsl dsl = getDsl(element);
         if(nonNull(dsl))
             return prev.keyword(name, element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(e -> e.getSimpleName().toString()).collect(toList()), dsl.useVarargs());
-        return prev.annotation(new AnnotationModel(annotation.toString()));
+        return prev.annotation(factory.annotation(annotation.toString()));
     }
 
     private Dsl getDsl(Element element) {
@@ -113,8 +120,8 @@ public class DslParser {
         void bind(ExecutableElement method);
     }
 
-    private State start(DslModel model) {
-        return new DslParserState(model, model.factory().parameters().get(0)).new InitialState();
+    private State start(DslModel model, Node node) {
+        return new DslParserState(factory, model, model.factory().parameters().get(0)).new InitialState(node);
     }
 
 }

@@ -29,48 +29,49 @@
 
 package fluent.dsl.model;
 
+import fluent.api.model.MethodModel;
+import fluent.api.model.TypeModel;
+import fluent.api.model.VarModel;
+
 import java.util.*;
 
-import static fluent.dsl.model.DslUtils.capitalize;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
-public class DslModel extends TypeModel {
-    private final String packageName;
-    private final KeywordModel factory;
-    private final KeywordModel delegate;
-    private final Map<String, ParameterModel> constants = new LinkedHashMap<>();
+public class DslModel {
+    private final TypeModel type;
+    private final MethodModel factory;
+    private final MethodModel delegate;
+    private final Map<String, VarModel> constants = new LinkedHashMap<>();
 
-    public DslModel(String packageName, List<AnnotationModel> annotations, String name, String factory, ParameterModel source, String delegate) {
-        super(annotations, name);
-        this.packageName = packageName;
-        this.factory = new KeywordModel(emptyList(), this, factory, emptyList(), singletonList(source), null, false);
-        this.delegate = new KeywordModel(emptyList(), this, delegate, emptyList(), emptyList(), null, false);
+    public DslModel(MethodModel factory, String delegate) {
+        this.factory = factory;
+        this.type = factory.returnType();
+        this.delegate = DslModelFactory.method(emptyList(), true, true, emptyList(), type, delegate, emptyList());
     }
 
-    public String packageName() {
-        return packageName;
+    public TypeModel type() {
+        return type;
     }
 
-    public KeywordModel factory() {
+    public MethodModel factory() {
         return factory;
     }
 
-    public KeywordModel delegate() {
+    public MethodModel delegate() {
         return delegate;
     }
 
     @Override
     public String toString() {
-        return packageName + "." + name();
+        return type.fullName();
     }
 
-    public ParameterModel addConstant(String name) {
-        return constants.computeIfAbsent(name, key -> new ParameterModel(emptyList(), new TypeModel(emptyList(), capitalize(name)), name));
-    }
-
-    public Collection<ParameterModel> constants() {
+    public Collection<VarModel> constants() {
         return constants.values();
+    }
+
+    public VarModel addConstant(VarModel constant) {
+        return constants.computeIfAbsent(constant.name(), key -> constant);
     }
 
 }

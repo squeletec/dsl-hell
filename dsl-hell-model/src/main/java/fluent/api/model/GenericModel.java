@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,19 +26,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-package fluent.dsl.model;
+package fluent.api.model;
 
 import java.util.List;
 
-public class ParameterModel extends BaseModel {
-    private final TypeModel type;
-    public ParameterModel(List<AnnotationModel> annotations, TypeModel type, String name) {
-        super(annotations, name);
-        this.type = type;
-    }
+public interface GenericModel extends ElementModel {
 
-    public TypeModel type() {
-        return type;
-    }
+    List<TypeModel> typeParameters();
+
 }

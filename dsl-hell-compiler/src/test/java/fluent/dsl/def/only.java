@@ -29,20 +29,4 @@
 
 package fluent.dsl.def;
 
-import fluent.dsl.Dsl;
-import fluent.dsl.model.ParameterModel;
-import fluent.dsl.model.TypeModel;
-import fluent.dsl.plugin.Plugin;
-
-import javax.annotation.processing.Filer;
-import java.util.Collections;
-
-@Dsl.Plugin(only.OnlyInterface.class)
-public @interface only {
-    class OnlyInterface implements Plugin {
-        @Override
-        public TypeModel generate(ParameterModel parameterModel, Filer filer) {
-            return new TypeModel(Collections.emptyList(), "ParentType");
-        }
-    }
-}
+public @interface only {}

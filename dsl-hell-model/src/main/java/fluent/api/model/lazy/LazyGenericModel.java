@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,29 +26,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model.lazy;
 
-package fluent.dsl.model;
-
+import fluent.api.model.AnnotationModel;
 import fluent.api.model.GenericModel;
 import fluent.api.model.TypeModel;
 
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.function.Supplier;
 
-public final class DslUtils {
+public class LazyGenericModel extends LazyElementModel implements GenericModel {
 
-    public static String capitalize(String string) {
-        return string.isEmpty() ? string : string.substring(0, 1).toUpperCase() + string.substring(1);
+    private final Lazy<List<TypeModel>> typeParameters;
+
+    public LazyGenericModel(Supplier<List<AnnotationModel>> annotationSupplier, boolean isStatic, boolean isPublic, Supplier<List<TypeModel>> typeParameters) {
+        super(annotationSupplier, isStatic, isPublic);
+        this.typeParameters = Lazy.lazy(typeParameters);
     }
 
-    public static String simpleName(TypeModel model) {
-        if(model.isArray())
-            return simpleName(model.componentType()) + "Array";
-        else
-            return model.rawType().simpleName();
-    }
-
-    public static String generic(GenericModel model) {
-        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::fullName).collect(Collectors.joining(", ", "<", ">"));
+    @Override
+    public List<TypeModel> typeParameters() {
+        return typeParameters.get();
     }
 
 }

@@ -1,5 +1,6 @@
 package fluent.dsl.processor;
 
+import fluent.api.model.*;
 import fluent.dsl.model.*;
 
 import javax.lang.model.element.ExecutableElement;
@@ -11,27 +12,31 @@ import static fluent.dsl.model.DslUtils.capitalize;
 import static fluent.dsl.model.DslUtils.simpleName;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static javax.lang.model.element.Modifier.STATIC;
 
 public class DslParserState {
+    private final DslModelFactory factory;
     private final DslModel dsl;
-    private final ParameterModel impl;
+    private final VarModel impl;
 
-    public DslParserState(DslModel dsl, ParameterModel impl) {
+    public DslParserState(DslModelFactory factory, DslModel dsl, VarModel impl) {
+        this.factory = factory;
         this.dsl = dsl;
         this.impl = impl;
     }
 
     public class InitialState implements DslParser.State {
+        Node node;
+        public InitialState(Node node) {
+            this.node = node;
+        }
         @Override public DslParser.State annotation(AnnotationModel annotationModel) {
             return this;
         }
         @Override public DslParser.State keyword(String name, List<String> aliases, boolean useVarargs) {
-            return new KeywordState(dsl, name, aliases, useVarargs);
+            return new KeywordState(node, name, aliases, useVarargs);
         }
         @Override public DslParser.State method(String name) {
-            return new DecideState(dsl, name, false);
+            return new DecideState(node, name, false);
         }
         @Override public DslParser.State constant(String name) {
             return this;
@@ -45,14 +50,14 @@ public class DslParserState {
 
 
     public class KeywordState implements DslParser.State {
-        private final TypeModel model;
+        private final Node node;
         private final String methodName;
         private final List<String> aliases;
-        private final List<ParameterModel> parameters = new ArrayList<>();
+        private final List<VarModel> parameters = new ArrayList<>();
         final boolean useVarargs;
 
-        public KeywordState(TypeModel model, String name, List<String> aliases, boolean useVarargs) {
-            this.model = model;
+        public KeywordState(Node node, String name, List<String> aliases, boolean useVarargs) {
+            this.node = node;
             this.methodName = name;
             this.aliases = aliases;
             this.useVarargs = useVarargs;
@@ -67,38 +72,35 @@ public class DslParserState {
             return new DecideState(finish(null), name, false);
         }
         @Override public DslParser.State constant(String name) {
-            parameters.add(dsl.addConstant(name));
+            parameters.add(dsl.addConstant(factory.parameter(emptyList(), factory.type(emptyList(), "", name), name)));
             return this;
         }
         @Override public DslParser.State parameter(VariableElement parameterModel) {
-            parameters.add(toModel(parameterModel));
+            parameters.add(factory.parameter(parameterModel));
             return this;
         }
         @Override public void bind(ExecutableElement method) {
-            TypeModel returnTypeModel = new TypeModel(emptyList(), method.getReturnType().toString());
-            KeywordModel body = new KeywordModel(emptyList(), returnTypeModel, method.getSimpleName().toString(), emptyList(), method.getParameters().stream().map(this::toModel).collect(toList()), null, false);
-            BindingModel binding = new BindingModel(method.getModifiers().contains(STATIC) ? impl.type() : impl, body);
-            finish(binding);
+            MethodModel body = factory.method(method);
+            StatementModel binding = factory.statementModel(impl, body);
+            finish(body.returnType(), binding);
         }
-        private TypeModel finish(BindingModel bindingModel) {
-            return model.add(capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type().name())).collect(joining()), methodName, this.aliases, parameters, bindingModel, false).type();
-        }
-        private ParameterModel toModel(VariableElement parameter) {
-            return new ParameterModel(emptyList(), new TypeModel(emptyList(), parameter.asType().toString()), parameter.getSimpleName().toString());
+        private Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
+            String className = capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type())).collect(joining());
+            return node.add(returnTypeModel, className, methodName, parameters, bindingModel);
         }
     }
 
     public class DecideState extends KeywordState implements DslParser.State {
-        private final TypeModel model;
+        private final Node node;
         private final String methodName;
 
-        public DecideState(TypeModel model, String name, boolean useVarargs) {
-            super(model, name, emptyList(), useVarargs);
-            this.model = model;
+        public DecideState(Node node, String name, boolean useVarargs) {
+            super(node, name, emptyList(), useVarargs);
+            this.node = node;
             this.methodName = name;
         }
         @Override public DslParser.State keyword(String name, List<String> aliases, boolean useVarargs) {
-            return new KeywordState(model, name, aliases, useVarargs);
+            return new KeywordState(node, name, aliases, useVarargs);
         }
         @Override public DslParser.State constant(String name) {
             return keyword(methodName, emptyList(), useVarargs).constant(name);

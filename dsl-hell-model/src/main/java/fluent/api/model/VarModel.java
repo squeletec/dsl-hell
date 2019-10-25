@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,38 +26,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model;
 
-package fluent.dsl.model;
+public interface VarModel extends ElementModel {
 
-import java.util.List;
+    TypeModel type();
 
-public class KeywordModel extends BaseModel {
-    private final TypeModel type;
-    private final List<String> aliases;
-    private final List<ParameterModel> parameters;
-    private final BindingModel binding;
-    private final boolean useVarargs;
-    public KeywordModel(List<AnnotationModel> annotations, TypeModel type, String name, List<String> aliases, List<ParameterModel> parameters, BindingModel binding, boolean useVarargs) {
-        super(annotations, name);
-        this.type = type;
-        this.aliases = aliases;
-        this.parameters = parameters;
-        this.binding = binding;
-        this.useVarargs = useVarargs;
-    }
-    public TypeModel type() {
-        return hasBinding() ? binding.method().type() : type;
-    }
-    public List<String> aliases() {
-        return aliases;
-    }
-    public List<ParameterModel> parameters() {
-        return parameters;
-    }
-    public BindingModel binding() {
-        return binding;
-    }
-    public boolean hasBinding() {
-        return binding != null;
-    }
+    String name();
+
 }

@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,23 +26,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model.lazy;
 
-package fluent.dsl.model;
+import fluent.api.model.AnnotationModel;
+import fluent.api.model.TypeModel;
 
-public class BindingModel {
-    private final BaseModel target;
-    private final KeywordModel method;
+import java.util.List;
+import java.util.function.Supplier;
 
-    public BindingModel(BaseModel target, KeywordModel method) {
-        this.target = target;
-        this.method = method;
+public class LazyAnnotationModel extends LazyElementModel implements AnnotationModel {
+
+    private final TypeModel type;
+
+    public LazyAnnotationModel(Supplier<List<AnnotationModel>> annotationSupplier, boolean isStatic, boolean isPublic, TypeModel type) {
+        super(annotationSupplier, isStatic, isPublic);
+        this.type = type;
     }
 
-    public BaseModel target() {
-        return target;
+    @Override
+    public TypeModel type() {
+        return type;
     }
 
-    public KeywordModel method() {
-        return method;
-    }
 }

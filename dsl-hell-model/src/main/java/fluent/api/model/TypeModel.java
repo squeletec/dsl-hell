@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,29 +26,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model;
 
-package fluent.dsl.model;
+import java.util.List;
 
-import fluent.api.model.GenericModel;
-import fluent.api.model.TypeModel;
+public interface TypeModel extends GenericModel {
 
-import java.util.stream.Collectors;
+    String simpleName();
 
-public final class DslUtils {
+    String packageName();
 
-    public static String capitalize(String string) {
-        return string.isEmpty() ? string : string.substring(0, 1).toUpperCase() + string.substring(1);
-    }
+    String fullName();
 
-    public static String simpleName(TypeModel model) {
-        if(model.isArray())
-            return simpleName(model.componentType()) + "Array";
-        else
-            return model.rawType().simpleName();
-    }
+    boolean isArray();
 
-    public static String generic(GenericModel model) {
-        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::fullName).collect(Collectors.joining(", ", "<", ">"));
-    }
+    TypeModel rawType();
+
+    TypeModel componentType();
+
+    List<MethodModel> methods();
+
+    List<VarModel> fields();
 
 }

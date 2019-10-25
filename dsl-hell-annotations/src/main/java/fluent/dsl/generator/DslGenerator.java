@@ -29,6 +29,9 @@
 
 package fluent.dsl.generator;
 
+import fluent.api.model.MethodModel;
+import fluent.api.model.TypeModel;
+import fluent.api.model.VarModel;
 import fluent.dsl.model.*;
 
 import java.io.PrintWriter;
@@ -36,6 +39,7 @@ import java.io.Writer;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static fluent.dsl.model.DslUtils.generic;
 import static java.util.stream.Collectors.joining;
 
 public class DslGenerator {
@@ -72,18 +76,18 @@ public class DslGenerator {
 
     private void generateDsl(DslModel model) {
         DslGenerator nested = indent();
-        println("package " + model.packageName() + ";");
+        println("package " + model.type().packageName() + ";");
         println();
         println("import fluent.api.Start;");
         println("import fluent.api.End;");
         println();
         println();
-        println("public interface " + model.name() + "{");
+        println("public interface " + model.type().simpleName() + "{");
         model.constants().forEach(nested::generateConstant);
         println();
-        nested.generateMethod("static", model.factory());
+        nested.generateMethod("static " + generic(model.type()), model.factory());
         println();
-        nested.generateInterfaceContent(model);
+        nested.generateInterfaceContent(model.type());
         println();
         nested.generateDelegate(model);
         println();
@@ -91,84 +95,85 @@ public class DslGenerator {
         println("}");
     }
 
-    private void generateConstant(ParameterModel constant) {
-        println("public static final " + constant.type().name() + " " + constant.name() + " = new " + constant.type().name() + "();");
+    private void generateConstant(VarModel constant) {
+        println("public static final " + constant.type().simpleName() + " " + constant.name() + " = new " + constant.type().simpleName() + "();");
     }
 
-    private void generateConstantClass(ParameterModel constant) {
+    private void generateConstantClass(VarModel constant) {
         println();
-        println("public static final class " + constant.type().name() + "{");
-        indent().println("private " + constant.type().name() + "() {}");
+        println("public static final class " + constant.type().simpleName() + "{");
+        indent().println("private " + constant.type().simpleName() + "() {}");
         println("}");
     }
 
     private void generateDelegate(DslModel model) {
-        println("public interface Delegate extends " + model.name() + " {");
+        println("public interface Delegate" + generic(model.type()) + " extends " + model.type().simpleName() + " {");
         DslGenerator indent = indent();
         indent.generateSignature(model.delegate());
-        model.keywords().forEach(keyword -> indent.generateDelegateMethod(keyword, model.delegate()));
+        model.type().methods().forEach(keyword -> indent.generateDelegateMethod(keyword, model.delegate()));
         println("}");
     }
 
-    private void generateDelegateMethod(KeywordModel model, KeywordModel delegate) {
-        println("default " + model.type() + " " + model.name() + "(" + parameters(model) + ") {");
+    private void generateDelegateMethod(MethodModel model, MethodModel delegate) {
+        println("default " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ") {");
         indent().println(returnType(model) + delegate.name() + "()." + model.name() + "(" + args(model) + ");");
         println("}");
     }
 
     private void generateInterfaceContent(TypeModel model) {
-        model.keywords().forEach(this::generateSignature);
-        model.keywords().stream().filter(kw -> !kw.hasBinding()).map(KeywordModel::type).forEach(this::generateInterface);
+        model.methods().forEach(this::generateSignature);
+        model.methods().stream().filter(kw -> kw.body().isEmpty()).map(MethodModel::returnType).forEach(this::generateInterface);
     }
 
     private void generateInterface(TypeModel model) {
         println();
-        println("public interface " + model.name() + " {");
+        println("public interface " + model.simpleName() + " {");
         indent().generateInterfaceContent(model);
         println("}");
     }
 
-    private void generateSignature(KeywordModel model) {
-        println((model.hasBinding() ? "@End " : "@Start(\"Unterminated sentence.\") ") + model.type() + " " + model.name() + "(" + parameters(model) + ");");
+    private void generateSignature(MethodModel model) {
+        println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
+        /*
         model.aliases().forEach(alias -> {
-            println("default " + model.type() + " " + alias + "(" + parameters(model) + ") {");
+            println("default " + model.returnType() + " " + alias + "(" + parameters(model) + ") {");
             indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
             println("}");
-        });
+        });*/
     }
 
-    private String returnType(KeywordModel model) {
-        return "void".equals(model.type().name()) ? "" : "return ";
+    private String returnType(MethodModel model) {
+        return model.returnsValue() ? "return " : "";
     }
 
-    private void generateMethod(String modifiers, KeywordModel model) {
-        println(modifiers + " " + model.type().name() + " " + model.name() + "(" + parameters(model) + ") {");
-        if(model.hasBinding()) {
-            BindingModel binding = model.binding();
-            indent().println(returnType(binding.method()) + binding.target().name() + "." + binding.method().name() + "(" + args(binding.method()) + ");");
+    private void generateMethod(String modifiers, MethodModel model) {
+        println(modifiers + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
+        DslGenerator nested = indent();
+        if(model.body().isEmpty()) {
+            nested.generateReturnAnonymousClass(model.returnType());
         } else {
-            indent().generateReturnAnonymousClass(model.type());
+            model.body().forEach(statementModel -> nested.println(statementModel.toString()));
         }
         println("}");
     }
 
     private void generateReturnAnonymousClass(TypeModel model) {
-        println("return new " + model.name() + "() {");
+        println("return new " + model.simpleName() + "() {");
         DslGenerator indent = indent();
-        model.keywords().forEach(keywordModel -> indent.generateMethod("public", keywordModel));
+        model.methods().forEach(keywordModel -> indent.generateMethod("public", keywordModel));
         println("};");
     }
 
-    private String parameters(KeywordModel model) {
-        List<String> collect = model.parameters().stream().map(p -> p.type().name() + " " + p.name()).collect(Collectors.toList());
+    private String parameters(MethodModel model) {
+        List<String> collect = model.parameters().stream().map(p -> p.type().fullName() + " " + p.name()).collect(Collectors.toList());
         if(useVarargs && !collect.isEmpty()) {
             collect.set(collect.size() - 1, collect.get(collect.size() - 1).replace("[] ", "... "));
         }
         return String.join(", ", collect);
     }
 
-    private String args(KeywordModel model) {
-        return model.parameters().stream().map(BaseModel::name).collect(joining(", "));
+    private String args(MethodModel model) {
+        return model.parameters().stream().map(VarModel::name).collect(joining(", "));
     }
 
 }

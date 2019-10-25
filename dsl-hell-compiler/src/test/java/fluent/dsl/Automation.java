@@ -34,6 +34,7 @@ import fluent.validation.Check;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Dsl
 @with public interface Automation {
@@ -48,7 +49,11 @@ import java.util.concurrent.TimeUnit;
 
     void verifyArray(@mustSee String[] values, @in String target);
 
+    @only void verifyNestedArray(@mustSee String[][] values);
+
     @only void verifyGeneric(@mustSee List<String> strings);
+
+    @only void verifyNestedGeneric(@mustSee Supplier<List<String>> strings);
 
     @only void verifyVararg(@mustSee int... ints);
 

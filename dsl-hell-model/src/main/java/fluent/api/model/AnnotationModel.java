@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,26 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+package fluent.api.model;
 
-package fluent.dsl.model;
+public interface AnnotationModel extends ElementModel {
 
-import java.util.List;
-
-public class BaseModel {
-    private final List<AnnotationModel> annotations;
-    private final String name;
-
-    public BaseModel(List<AnnotationModel> annotations, String name) {
-        this.annotations = annotations;
-        this.name = name;
-    }
-
-    public List<AnnotationModel> annotations() {
-        return annotations;
-    }
-
-    public String name() {
-        return name;
-    }
+    TypeModel type();
 
 }
