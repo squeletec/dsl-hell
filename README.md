@@ -1,11 +1,19 @@
 # DSL HELL
 ![Released version](https://img.shields.io/maven-central/v/foundation.fluent.api/dsl-hell.svg)
 
-Extreme Java DSL code generator.
+Did you need higher/business level description, that BDD/Cucumber allows, but still benefit from Java general programming
+language flexibility, and you didn't want to end up maintaining complex Java DSL (fluent interface) class / interface
+hierarchy, that would give it to you?
 
-Add dependencies:
+Then you can try this project, and see if it gives you what you need.
 
-Annotations need to be standard dependency.
+## Start in 3 steps
+There are no more than following 3 simple steps to get from 0 to full higher level Java DSL.
+
+### 1. Add dependencies
+This project uses annotation processing based code generator. So you need following dependencies:
+
+Standard compile dependency with annotations to define DSL "keywords":
 ```xml
 <dependency>
     <groupId>foundation.fluent.api</groupId>
@@ -14,7 +22,8 @@ Annotations need to be standard dependency.
 </dependency>
 ```
 
-Annotation processor, can be standard dependency:
+Then you need the dependency on the annotation processor for your compiler. It can be added couple of different ways.
+Simples (but not exactly correct) is adding it as standard dependency:
 ```xml
 <dependency>
     <groupId>foundation.fluent.api</groupId>
@@ -22,85 +31,99 @@ Annotation processor, can be standard dependency:
     <version>${dsl-hell.version}</version>
 </dependency>
 ```
+Now you are ready to build your DSL.
 
-or annotation processor specified in compiler plugin.
-
-Annotation processing based code generator used to generate fluent API binding to  simple automation methods.
-
-## Example
-
-Automation interface with annotation metadata describing, how to invoke it using fluent API:
+### 2. Define your DSL keywords
+We'll be building Java based DSL, which is achieved by method chaining. What we want to be able to write, is e.g.
 
 ```java
-@Dsl(className = "User", factoryMethod = "newUser")
+Tester.entersUsername(validUsername).andPassword(validPassword).at(loginPage);
+Tester.shouldSee(welcomeMessage);
+```
+
+`Tester` is our root object of the DSL. We are going to generate it's class (interface).
+We need to prepare keywords for this DSL. By keywords I mean all the methods, and could also be artificial objects.
+This is done by annotations, annotated with `@Dsl` annotation.
+
+This annotation can be used anywhere on following elements:
+1. The keyword annotation itself
+2. Package containing the annotation or any parent package.
+3. Class / interface / annotation, which may contain nested annotation.
+
+For simplicity and minimum amount of work let's use last option:
+
+```java
+@Dsl
 public interface Automation {
 
-    // These annotations can be externalzed
-    @interface User {}
     @interface entersUsername {}
     @interface andPassword {}
-    @interface atUrl {}
-    @interface mustSee {}
-    @interface entersOrder {}
-
-    void userLogin(@entersUsername String username, @andPassword String password, @atUrl String url);
-
-    void verifyLogonMessage(@mustSee @message String message);
+    @interface at {}
+    @interface shouldSee {}
 
 }
 ```
 
-Generated fluent interface sentence examples
+DSL keywords are prepared. Now we caan define our binding of functional methods to our DSL.
+
+### 3. Bind your methods via DSL
+
+Now we'll only focus on the automation logic, using standard Java interface method with all arguments needed for it,
+and only by annotations decorate it so, that full DSL can be generated.
+
+For simplicity let's have all together in the Automation interface:
 
 ```java
-import static fluent.api.bdd.Bdd.When;
-import static fluent.api.bdd.Bdd.then;
+@Dsl
+public interface Automation {
 
-public class GeneratedUserDslTest {
+    @interface entersUsername {}
+    @interface andPassword {}
+    @interface shouldSee {}
 
-    private final User John = newUser(mock(Automation.class));
+    void loginAction(@entersUsername String username, @andPassword String password, @at Sting url);
 
-    private final String validUserName = "John Doe";
+    void validateMessage(@shouldSee String message);
+
+}
+```
+
+We are done. Now there is new interface `AutomationDsl` generated with factory method accepting instance of this our
+interface, and providing the DSL we described above.
+
+See usage in simple test (assume using mockito and some testing framework):
+```java
+public class AutomationTest {
+    private final String validUsername = "John Doe";
     private final String validPassword = "$3cr3T";
-    private final String invalidPassword = "password";
+    private final String welcomeMessage = "Welcome John";
     private final String loginPage = "http://my.server.com/login";
 
     @Test
-    public void successfulLoginScreenTest() {
-        When (John). entersUsername (validUserName). andPassword (validPassword). atUrl (loginPage);
-        then (John). mustSeeMessage ("Welcome My Name!");
-    }
-
-    @Test
-    public void unsuccessfulLoginScreenTest() {
-        When (John). entersUsername (validUserName). andPassword (invalidPassword). atUrl (loginPage);
-        then (John). mustSeeMessage ("Invalid username or password!");
-    }
-
-    @Test
-    public void testDirectDsl() {
-        John.entersUsername(validUserName).andPassword(validPassword).atUrl(loginPage);
-        John.mustSeeMessage("Welcome " + validUserName + "!");
+    public void test() {
+        Automation mock = mock(Automation.class);
+        AutomationDsl Tester = AutomationDsl.create(mock);
+    
+        // Here we use our DSL
+        Tester.entersUsername(validUsername).andPassword(validPassword).at(loginPage);
+        Tester.shouldSee(welcomeMessage);
+    
+        // Using mockito we can verify, that DSL propagated properly to our automation calls
+        verify(mock).loginAction(username, password, url);
+        verify(mock).validateMessage(validMessage);
     }
 
 }
 ```
 
-## Defining DSL
+Binding methods are only invoked at the very end method of each sentence.
+To make sure, that nobody will miss it, the generated code benefits from following compiler extension: 
+[fluent-api-end-check](https://github.com/c0stra/fluent-api-end-check)
 
-DSL is generated based on metadata defined using annotations.
 
-1. Class or interface annotated with `@Dsl` will be processed, and used to build DSL for it.
-2. Annotation annotated with `@Dsl` will be identified as description of the DSL sentences to be bound
-   to the model's methods.
-3. Annotations defined in class / interface annotated by `@Dsl`, or defined in package annotated with `@Dsl`
-   will be identified as description of the DSL sentences.
-4. Each annotation results in a method, unless it is annotated also with `@Constant`.
-5. Annotation annotated `@Constant` generates extra singleton class which can is used as parameter
-   for current method.
-6. Dsl method will use all parameters until next `@Dsl` annotation. Those parameters can be either
-   constants generated using annotation above, or real binding method's parameters.
-7. If first parameter of binding method is annotated with `@Dsl` annotated annotation, this is used in DSL,
-   and real method name is ignored in DSL. Otherwise method name is used also in DSL.
-8. Method, that doesn't use any `@Dsl` annotated annotations results in it's copy in final DSL.
-9. DSL annotations used on the method itself are used as suffix.
+## Full user guide
+TBD
+
+### 1. Customizations of the DSL
+
+### 2. Support for generics
