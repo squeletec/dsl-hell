@@ -87,7 +87,7 @@ public interface Automation {
 
 }
 ```
-
+Now recompile zour code in order to generate the code, e.g. by `mvn compile`.
 We are done. Now there is new interface `AutomationDsl` generated with factory method accepting instance of this our
 interface, and providing the DSL we described above.
 
