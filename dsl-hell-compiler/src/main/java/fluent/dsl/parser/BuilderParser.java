@@ -35,6 +35,7 @@ import fluent.dsl.Builder;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 
 import static fluent.dsl.model.DslUtils.unCapitalize;
 import static java.util.Collections.emptyList;
@@ -50,7 +51,7 @@ public class BuilderParser {
     }
 
     public TypeModel parseModel(Element element) {
-        TypeModel model = factory.type(element);
+        TypeModel model = factory.parameter((VariableElement) element).type();
         Builder dsl = element.getAnnotation(Builder.class);
 
         String packageName = dsl.packageName().isEmpty() ? model.packageName() : dsl.packageName();
@@ -58,7 +59,7 @@ public class BuilderParser {
         TypeModel dslModel = factory.type(packageName, dslName);
 
         ParserState start = start(dslModel);
-        for(ExecutableElement constructor : constructorsIn(element.getEnclosedElements())) {
+        for(ExecutableElement constructor : constructorsIn(((DeclaredType) element.asType()).asElement().getEnclosedElements())) {
             ParserState state = start;
             for (VariableElement parameter : constructor.getParameters())
                 state = state.keyword(parameter.getSimpleName().toString(), emptyList(), true).parameter(parameter);
@@ -76,7 +77,7 @@ public class BuilderParser {
     }
 
     private ParserState start(TypeModel model) {
-        return new ParserContext(factory, model, null).new InitialState(null);
+        return new ParserContext(factory, model, null).new InitialState(factory.method("artificial").returnType(model));
     }
 
 }

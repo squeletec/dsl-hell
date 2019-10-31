@@ -162,12 +162,7 @@ public class ParserContext {
                 methodModel.body().addAll(asList(bindingModel));
                 this.methodModel.returnType().methods().add(methodModel);
                 return new Node(methodModel);
-                //return new Node(false, typeModel, methodModel.returnType().typeParameters(), "", className, methodName, aliases, parameters, bindingModel);
             });
-        }
-
-        public MethodModel methodModel() {
-            return methodModel;
         }
     }
 }
