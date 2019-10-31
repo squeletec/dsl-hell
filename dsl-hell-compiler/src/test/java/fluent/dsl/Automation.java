@@ -29,6 +29,7 @@
 
 package fluent.dsl;
 
+import fluent.dsl.bdd.When.and;
 import fluent.dsl.def.*;
 import fluent.validation.Check;
 
@@ -37,7 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 @Dsl
-@with public interface Automation {
+@withApplication
+public interface Automation {
 
     void injectOrder(@injects String order, @into String destination);
 
@@ -45,7 +47,7 @@ import java.util.function.Supplier;
 
     void verifyTime(@mustSee long value, TimeUnit unit);
 
-    void verifyOrder(@mustSeeOrderWith String orderId, @only Check<? super String> orderCheck);
+    void verifyOrder(@mustSeeOrderWith @orderId String orderId, @and Check<? super String> orderCheck);
 
     void verifyArray(@mustSee String[] values, @in String target);
 

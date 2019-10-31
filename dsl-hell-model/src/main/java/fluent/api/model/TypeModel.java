@@ -30,7 +30,7 @@ package fluent.api.model;
 
 import java.util.List;
 
-public interface TypeModel extends GenericModel {
+public interface TypeModel extends GenericModel<TypeModel> {
 
     String simpleName();
 
@@ -44,10 +44,24 @@ public interface TypeModel extends GenericModel {
 
     TypeModel rawType();
 
+    TypeModel rawType(TypeModel rawType);
+
     TypeModel componentType();
+
+    TypeModel componentType(TypeModel componentType);
 
     List<MethodModel> methods();
 
+    TypeModel methods(List<MethodModel> methods);
+
     List<VarModel> fields();
+
+    TypeModel fields(List<VarModel> fields);
+
+    TypeModel superClass();
+
+    List<TypeModel> interfaces();
+
+    TypeModel superClass(TypeModel dslType);
 
 }

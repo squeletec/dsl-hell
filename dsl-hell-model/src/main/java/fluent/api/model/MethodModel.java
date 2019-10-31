@@ -30,9 +30,11 @@ package fluent.api.model;
 
 import java.util.List;
 
-public interface MethodModel extends GenericModel {
+public interface MethodModel extends GenericModel<MethodModel> {
 
     TypeModel returnType();
+
+    MethodModel returnType(TypeModel returnType);
 
     String name();
 

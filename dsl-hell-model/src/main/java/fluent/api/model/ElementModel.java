@@ -35,9 +35,7 @@ public interface ElementModel {
 
     List<AnnotationModel> annotations();
 
-    boolean isStatic();
-
-    boolean isPublic();
+    ModifiersModel modifiers();
 
     Map<String, Object> metadata();
 

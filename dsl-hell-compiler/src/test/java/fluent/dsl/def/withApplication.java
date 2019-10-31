@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2018, Ondrej Fischer
+ * Copyright (c) 2019, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package fluent.api.model.lazy;
 
-import fluent.api.model.AnnotationModel;
-import fluent.api.model.ElementModel;
+package fluent.dsl.def;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-
-public class LazyElementModel implements ElementModel {
-
-    private final Lazy<List<AnnotationModel>> lazyAnnotations;
-    private final boolean isStatic;
-    private final boolean isPublic;
-    private final Map<String, Object> metadata = new HashMap<>();
-
-    public LazyElementModel(Supplier<List<AnnotationModel>> annotationSupplier, boolean isStatic, boolean isPublic) {
-        this.lazyAnnotations = Lazy.lazy(annotationSupplier);
-        this.isStatic = isStatic;
-        this.isPublic = isPublic;
-    }
-
-    @Override
-    public List<AnnotationModel> annotations() {
-        return lazyAnnotations.get();
-    }
-
-    @Override
-    public boolean isStatic() {
-        return isStatic;
-    }
-
-    @Override
-    public boolean isPublic() {
-        return isPublic;
-    }
-
-    @Override
-    public Map<String, Object> metadata() {
-        return metadata;
-    }
-
-}
+public @interface withApplication { }

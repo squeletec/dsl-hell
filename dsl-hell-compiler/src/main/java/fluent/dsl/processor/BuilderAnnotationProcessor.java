@@ -30,44 +30,36 @@ package fluent.dsl.processor;
 
 import fluent.api.model.TypeModel;
 import fluent.api.model.impl.ModelFactoryImpl;
-import fluent.dsl.Dsl;
-import fluent.dsl.parser.DslParser;
+import fluent.dsl.Builder;
+import fluent.dsl.parser.BuilderParser;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import java.util.HashSet;
 import java.util.Set;
 
 import static fluent.dsl.generator.DslGenerator.generateFrom;
-import static java.util.Arrays.asList;
-import static javax.lang.model.element.ElementKind.CLASS;
-import static javax.lang.model.element.ElementKind.INTERFACE;
 import static javax.tools.Diagnostic.Kind.WARNING;
 
-@SupportedAnnotationTypes("fluent.dsl.Dsl")
-public class DslAnnotationProcessor extends AbstractProcessor {
-
-    private final Set<ElementKind> modelTypes = new HashSet<>(asList(INTERFACE, CLASS));
+@SupportedAnnotationTypes("fluent.dsl.Builder")
+public class BuilderAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for(Element element : roundEnv.getElementsAnnotatedWith(Dsl.class))
-            if(modelTypes.contains(element.getKind()))
-                process(element, new DslParser(new ModelFactoryImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils())));
+        for(Element element : roundEnv.getElementsAnnotatedWith(Builder.class))
+            process(element, new BuilderParser(new ModelFactoryImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils())));
         return true;
     }
 
-    private void process(Element element, DslParser factory) {
+    private void process(Element element, BuilderParser parser) {
         try {
-            TypeModel model = factory.parseModel(element);
+            TypeModel model = parser.parseModel(element);
             generateFrom(
-                    processingEnv.getFiler().createSourceFile(model.superClass().rawType().fullName()).openWriter(),
-                    element.getAnnotation(Dsl.class).useVarargs(),
-                    generator -> generator.generateDsl(model)
+                    processingEnv.getFiler().createSourceFile(model.rawType().fullName()).openWriter(),
+                    element.getAnnotation(Builder.class).useVarargs(),
+                    generator -> generator.generateBuilder(model)
             );
         } catch (Throwable throwable) {
             processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);

@@ -429,7 +429,37 @@ dsl.string("A").A(5).B(4.5).C("C");
 
 ### 5. DSL syntax tricks
 
-Optically readable syntax:
+#### 5.1 BDD Semantics
+
+To add BDD semantics on top of any fluent interface one can simply use static methods from class `Bdd`:
+
+Given this import:
+```java
+import static fluent.dsl.bdd.Bdd.*;
+```
+
+you can use:
+
+````java
+When(Tester).entersUsername(valiedUsername).andPassword(validPassword).atUrl(loginPage);
+then(Tester).shouldSeeMessage(welcomeMessage);
+````
+
+#### 5.2 BDD generated DSL
+
+The previous BDD style is very simple to achieve, but as the DSL root object is the same,
+for all `<T> T Given(T)`, `<T> T When(T)` or `<T> T then(T)`, DSL for each separate type
+of actions is the same. It may be desired, but maybe not.
+
+If not, one can generate BDD style DSL using ready to use keywords `fluent.dsl.bdd.When` and
+`fluent.ds.bdd.then`:
+
+```java
+void action(@When @User @entersUsername String username, @andPassword String password, @atUrl String url);
+```
+
+#### 5.3 Optically readable syntax
+
 ```java
 When (User). entersUsername (validUsername). andPassword (validPassword). atUrl (loginPage);
 ```

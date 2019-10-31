@@ -31,12 +31,14 @@ package fluent.dsl.generator;
 import fluent.api.model.MethodModel;
 import fluent.api.model.TypeModel;
 import fluent.api.model.VarModel;
-import fluent.dsl.model.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static fluent.dsl.model.DslUtils.generic;
@@ -56,6 +58,7 @@ public class DslGenerator {
     private final PrintWriter source;
     private final String prefix;
     private final boolean useVarargs;
+    private final Set<TypeModel> generated = new HashSet<>();
 
     private DslGenerator(PrintWriter source, String prefix, boolean useVarargs) {
         this.source = source;
@@ -75,30 +78,46 @@ public class DslGenerator {
         source.println();
     }
 
-    public static void generateFrom(Writer writer, DslModel model, boolean useVarargs) {
+    public static void generateFrom(Writer writer, boolean useVarargs, Consumer<DslGenerator> consumer) {
         try(PrintWriter source = new PrintWriter(writer)) {
-            new DslGenerator(source, "", useVarargs).generateDsl(model);
+            consumer.accept(new DslGenerator(source, "", useVarargs));
         }
     }
 
-    private void generateDsl(DslModel model) {
+    public void generateDsl(TypeModel delegateModel) {
         DslGenerator nested = indent();
-        println("package " + model.type().packageName() + ";");
+        TypeModel model = delegateModel.superClass();
+        println("package " + model.packageName() + ";");
         println();
         println("import fluent.api.Start;");
         println("import fluent.api.End;");
         println();
         println();
-        println("public interface " + model.type().simpleName() + "{");
-        model.constants().forEach(nested::generateConstant);
+        println("public interface " + model.simpleName() + "{");
+        model.fields().forEach(nested::generateConstant);
         println();
-        nested.generateMethod("static ", model.factory());
+        nested.generateInterfaceContent(model);
         println();
-        nested.generateInterfaceContent(model.type());
+        nested.generateDelegate(delegateModel);
         println();
-        nested.generateDelegate(model);
+        model.fields().forEach(nested::generateConstantClass);
+        println("}");
+    }
+
+    public void generateBuilder(TypeModel model) {
+        DslGenerator nested = indent();
+        println("package " + model.packageName() + ";");
         println();
-        model.constants().forEach(nested::generateConstantClass);
+        println("import fluent.api.Start;");
+        println("import fluent.api.End;");
+        println();
+        println();
+        println("public interface " + model.simpleName() + "{");
+        println();
+        nested.generateInterfaceContent(model);
+        println();
+        //nested.generateDelegate(model);
+        println();
         println("}");
     }
 
@@ -113,11 +132,12 @@ public class DslGenerator {
         println("}");
     }
 
-    private void generateDelegate(DslModel model) {
-        println("public interface Delegate" + generic(model.type()) + " extends " + model.type().simpleName() + " {");
+    private void generateDelegate(TypeModel delegateModel) {
+        TypeModel model = delegateModel.superClass();
+        println("public interface Delegate" + generic(model) + " extends " + model.simpleName() + " {");
         DslGenerator indent = indent();
-        indent.generateSignature(model.delegate());
-        model.type().methods().forEach(keyword -> indent.generateDelegateMethod(keyword, model.delegate()));
+        indent.generateSignature(delegateModel.methods().get(0));
+        model.methods().stream().filter(m -> !m.modifiers().isStatic()).forEach(keyword -> indent.generateDelegateMethod(keyword, delegateModel.methods().get(0)));
         println("}");
     }
 
@@ -128,8 +148,9 @@ public class DslGenerator {
     }
 
     private void generateInterfaceContent(TypeModel model) {
+        generated.add(model);
         model.methods().forEach(this::generateSignature);
-        model.methods().stream().filter(kw -> kw.body().isEmpty()).map(MethodModel::returnType).forEach(this::generateInterface);
+        model.methods().stream().filter(kw -> kw.body().isEmpty()).map(MethodModel::returnType).filter(t -> !generated.contains(t)).forEach(this::generateInterface);
     }
 
     private void generateInterface(TypeModel model) {
@@ -140,20 +161,24 @@ public class DslGenerator {
     }
 
     private void generateSignature(MethodModel model) {
-        println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
-        ((List<String>)model.metadata().getOrDefault("aliases", Collections.emptyList())).forEach(alias -> {
-            println("default " + generic(model) + " " + model.returnType() + " " + alias + "(" + parameters(model) + ") {");
-            indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
-            println("}");
-        });
+        if(model.modifiers().isStatic())
+            generateMethod(model);
+        else {
+            println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
+            ((List<String>)model.metadata().getOrDefault("aliases", Collections.emptyList())).forEach(alias -> {
+                println("default " + generic(model) + " " + model.returnType().fullName() + " " + alias + "(" + parameters(model) + ") {");
+                indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
+                println("}");
+            });
+        }
     }
 
     private String returnType(MethodModel model) {
         return model.returnsValue() ? "return " : "";
     }
 
-    private void generateMethod(String modifiers, MethodModel model) {
-        println(modifiers + generic(model) + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
+    private void generateMethod(MethodModel model) {
+        println("public " + (model.modifiers().isStatic() ? "static " : "") + generic(model) + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
         DslGenerator nested = indent();
         if(model.body().isEmpty()) {
             nested.generateReturnAnonymousClass(model.returnType());
@@ -166,7 +191,7 @@ public class DslGenerator {
     private void generateReturnAnonymousClass(TypeModel model) {
         println("return new " + model.simpleName() + "() {");
         DslGenerator indent = indent();
-        model.methods().forEach(keywordModel -> indent.generateMethod("public", keywordModel));
+        model.methods().stream().filter(m -> !m.modifiers().isStatic()).forEach(indent::generateMethod);
         println("};");
     }
 

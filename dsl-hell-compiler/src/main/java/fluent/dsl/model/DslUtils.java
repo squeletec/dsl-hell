@@ -30,8 +30,12 @@ package fluent.dsl.model;
 
 import fluent.api.model.GenericModel;
 import fluent.api.model.TypeModel;
+import fluent.api.model.VarModel;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.stream.Collectors.joining;
 
 public final class DslUtils {
 
@@ -39,15 +43,30 @@ public final class DslUtils {
         return string.isEmpty() ? string : string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
-    public static String simpleName(TypeModel model) {
-        if(model.isArray())
-            return simpleName(model.componentType()) + "Array";
-        else
-            return model.rawType().simpleName();
+    public static String unCapitalize(String string) {
+        return string.isEmpty() ? string : string.substring(0, 1).toLowerCase() + string.substring(1);
     }
 
-    public static String generic(GenericModel model) {
-        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::fullName).collect(Collectors.joining(", ", "<", ">"));
+    public static String simpleName(TypeModel model) {
+        return model.isArray() ? simpleName(model.componentType()) + "Array" : model.rawType().simpleName();
     }
+
+    public static String generic(GenericModel<?> model) {
+        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::fullName).collect(joining(", ", "<", ">"));
+    }
+
+    public static void traverse(TypeModel t, List<TypeModel> out) {
+        if(t.isTypeVariable())
+            out.add(t);
+        else
+            t.typeParameters().forEach(p -> traverse(p, out));
+    }
+
+    public static List<TypeModel> usedTypeParameters(List<VarModel> parameters) {
+        List<TypeModel> out = new ArrayList<>();
+        parameters.stream().map(VarModel::type).forEach(t -> traverse(t, out));
+        return out;
+    }
+
 
 }

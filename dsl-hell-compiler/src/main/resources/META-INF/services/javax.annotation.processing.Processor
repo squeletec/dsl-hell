@@ -1,1 +1,2 @@
 fluent.dsl.processor.DslAnnotationProcessor
+fluent.dsl.processor.BuilderAnnotationProcessor

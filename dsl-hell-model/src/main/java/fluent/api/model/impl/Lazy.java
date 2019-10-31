@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2019, Ondrej Fischer
+ * Copyright (c) 2018, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,51 +26,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package fluent.dsl.model;
+package fluent.api.model.impl;
 
-import fluent.api.model.MethodModel;
-import fluent.api.model.TypeModel;
-import fluent.api.model.VarModel;
+import java.util.function.Supplier;
 
-import java.util.*;
+public final class Lazy<T> {
 
-import static java.util.Collections.emptyList;
+    private T value;
 
-public class DslModel {
-    private final TypeModel type;
-    private final MethodModel factory;
-    private final MethodModel delegate;
-    private final Map<String, VarModel> constants = new LinkedHashMap<>();
+    private final Supplier<T> supplier;
 
-    public DslModel(MethodModel factory, String delegate) {
-        this.factory = factory;
-        this.type = factory.returnType();
-        this.delegate = DslModelFactory.method(emptyList(), true, true, emptyList(), type, delegate, emptyList());
+    private Lazy(Supplier<T> supplier) {
+        this.supplier = supplier;
     }
 
-    public TypeModel type() {
-        return type;
+    public static <T> Lazy<T> lazy(Supplier<T> supplier) {
+        return new Lazy<>(supplier);
     }
 
-    public MethodModel factory() {
-        return factory;
+    public static <T> Lazy<T> lazy(T value) {
+        return lazy(() -> value);
     }
 
-    public MethodModel delegate() {
-        return delegate;
-    }
-
-    @Override
-    public String toString() {
-        return type.fullName();
-    }
-
-    public Collection<VarModel> constants() {
-        return constants.values();
-    }
-
-    public VarModel addConstant(VarModel constant) {
-        return constants.computeIfAbsent(constant.name(), key -> constant);
+    public T get() {
+        if(value == null)
+            value = supplier.get();
+        return value;
     }
 
 }

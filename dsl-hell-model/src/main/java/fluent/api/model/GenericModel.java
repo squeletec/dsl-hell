@@ -30,8 +30,10 @@ package fluent.api.model;
 
 import java.util.List;
 
-public interface GenericModel extends ElementModel {
+public interface GenericModel<T> extends ElementModel {
 
     List<TypeModel> typeParameters();
+
+    T typeParameters(List<TypeModel> typeParameters);
 
 }

@@ -41,9 +41,9 @@ public class AutomationTest {
     public void test() {
         Automation mock = mock(Automation.class);
         AutomationDsl dsl = AutomationDsl.create(mock);
-        dsl.with().injects("Order 1").into("dest");
-        dsl.with().mustSee("Order 1").in("dest");
-        int aaa = dsl.with().into("AAA");
+        dsl.withApplication().injects("Order 1").into("dest");
+        dsl.withApplication().mustSee("Order 1").in("dest");
+        int aaa = dsl.withApplication().into("AAA");
         verify(mock).injectOrder("Order 1", "dest");
         verify(mock).verifyOrder("Order 1", "dest");
     }
@@ -52,8 +52,8 @@ public class AutomationTest {
     public void testTime() {
         Automation mock = mock(Automation.class);
         AutomationDsl dsl = AutomationDsl.create(mock);
-        dsl.with().mustSee(2, HOURS);
-        dsl.with().emptyMethod();
+        dsl.withApplication().mustSee(2, HOURS);
+        dsl.withApplication().emptyMethod();
         verify(mock).verifyTime(2, HOURS);
         verify(mock).emptyMethod();
     }
