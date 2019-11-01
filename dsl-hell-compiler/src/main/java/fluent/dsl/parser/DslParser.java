@@ -34,6 +34,7 @@ import fluent.dsl.Constant;
 
 import javax.lang.model.element.*;
 
+import static fluent.dsl.model.DslUtils.override;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
@@ -55,8 +56,8 @@ public class DslParser {
         TypeModel model = factory.type(element);
         Dsl dsl = element.getAnnotation(Dsl.class);
 
-        String packageName = dsl.packageName().isEmpty() ? model.packageName() : dsl.packageName();
-        String dslName = dsl.className().isEmpty() ? model.rawType().simpleName() + "Dsl" : dsl.className();
+        String packageName = override(dsl.packageName(), model.packageName());
+        String dslName = override(dsl.className(), model.rawType().simpleName() + "Dsl");
 
         VarModel source = factory.parameter(model, dsl.parameterName());
         TypeModel dslType = factory.type(packageName, dslName).typeParameters(model.typeParameters());
@@ -114,7 +115,7 @@ public class DslParser {
 
     private ParserState start(TypeModel model) {
         MethodModel factoryMethod = model.methods().get(0);
-        return new ParserContext(factory, model, factoryMethod.parameters().get(0)).new InitialState(model);
+        return new ParserContext(factory, model, factoryMethod.parameters().get(0)).new InitialState();
     }
 
 }

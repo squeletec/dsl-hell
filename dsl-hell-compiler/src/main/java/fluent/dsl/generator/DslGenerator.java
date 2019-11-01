@@ -89,11 +89,12 @@ public class DslGenerator {
         TypeModel model = delegateModel.superClass();
         println("package " + model.packageName() + ";");
         println();
+        println("import javax.annotation.Generated;");
         println("import fluent.api.Start;");
         println("import fluent.api.End;");
         println();
-        println();
-        println("public interface " + model.simpleName() + "{");
+        println("@Generated(\"Generated DSL class\")");
+        println("public interface " + model.simpleName() + " {");
         model.fields().forEach(nested::generateConstant);
         println();
         nested.generateInterfaceContent(model);
@@ -108,15 +109,14 @@ public class DslGenerator {
         DslGenerator nested = indent();
         println("package " + model.packageName() + ";");
         println();
+        println("import javax.annotation.Generated;");
         println("import fluent.api.Start;");
         println("import fluent.api.End;");
         println();
-        println();
-        println("public interface " + model.simpleName() + "{");
+        println("@Generated(\"Generated DSL class\")");
+        println("public interface " + model.simpleName() + " {");
         println();
         nested.generateInterfaceContent(model);
-        println();
-        //nested.generateDelegate(model);
         println();
         println("}");
     }

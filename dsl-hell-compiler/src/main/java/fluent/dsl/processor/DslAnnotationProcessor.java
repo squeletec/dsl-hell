@@ -31,6 +31,7 @@ package fluent.dsl.processor;
 import fluent.api.model.TypeModel;
 import fluent.api.model.impl.ModelFactoryImpl;
 import fluent.dsl.Dsl;
+import fluent.dsl.parser.BuilderParser;
 import fluent.dsl.parser.DslParser;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -44,24 +45,32 @@ import java.util.Set;
 
 import static fluent.dsl.generator.DslGenerator.generateFrom;
 import static java.util.Arrays.asList;
-import static javax.lang.model.element.ElementKind.CLASS;
-import static javax.lang.model.element.ElementKind.INTERFACE;
+import static javax.lang.model.element.ElementKind.*;
 import static javax.tools.Diagnostic.Kind.WARNING;
 
 @SupportedAnnotationTypes("fluent.dsl.Dsl")
 public class DslAnnotationProcessor extends AbstractProcessor {
 
-    private final Set<ElementKind> modelTypes = new HashSet<>(asList(INTERFACE, CLASS));
+    private final Set<ElementKind> modelTypes = new HashSet<>(asList(INTERFACE, CLASS, PARAMETER));
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        ModelFactoryImpl modelFactory = new ModelFactoryImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
         for(Element element : roundEnv.getElementsAnnotatedWith(Dsl.class))
-            if(modelTypes.contains(element.getKind()))
-                process(element, new DslParser(new ModelFactoryImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils())));
+            switch (element.getKind()) {
+                case INTERFACE:
+                case CLASS:
+                    processBinding(element, new DslParser(modelFactory));
+                    break;
+                case FIELD:
+                case PARAMETER:
+                    processBuilder(element, new BuilderParser(modelFactory));
+                    break;
+            }
         return true;
     }
 
-    private void process(Element element, DslParser factory) {
+    private void processBinding(Element element, DslParser factory) {
         try {
             TypeModel model = factory.parseModel(element);
             generateFrom(
@@ -73,5 +82,19 @@ public class DslAnnotationProcessor extends AbstractProcessor {
             processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);
         }
     }
+
+    private void processBuilder(Element element, BuilderParser parser) {
+        try {
+            TypeModel model = parser.parseModel(element);
+            generateFrom(
+                    processingEnv.getFiler().createSourceFile(model.rawType().fullName()).openWriter(),
+                    element.getAnnotation(Dsl.class).useVarargs(),
+                    generator -> generator.generateBuilder(model)
+            );
+        } catch (Throwable throwable) {
+            processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);
+        }
+    }
+
 
 }

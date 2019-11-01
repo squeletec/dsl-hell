@@ -44,7 +44,7 @@ import static java.lang.annotation.ElementType.*;
  *     annotations within it's scope as keywords for the DSL. So they can be used in "method binding" signature
  *     to instruct the annotation processor, what the DSL sentences should look like.
  */
-@Target({TYPE, ANNOTATION_TYPE, PACKAGE})
+@Target({TYPE, ANNOTATION_TYPE, PACKAGE, FIELD, PARAMETER})
 public @interface Dsl {
 
     /**
@@ -99,5 +99,11 @@ public @interface Dsl {
      * @return Flag indicating auto conversion to vararg. Default is to auto-convert.
      */
     boolean useVarargs() default true;
+
+    /**
+     * Allow static entry methods for a sentence, which is bound to static method.
+     * @return Flag indicating allowance of static entry methods.
+     */
+    boolean staticEntryForStaticBinding() default true;
 
 }

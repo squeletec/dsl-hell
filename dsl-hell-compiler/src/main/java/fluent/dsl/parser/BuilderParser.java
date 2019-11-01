@@ -30,7 +30,7 @@ package fluent.dsl.parser;
 
 import fluent.api.model.ModelFactory;
 import fluent.api.model.TypeModel;
-import fluent.dsl.Builder;
+import fluent.dsl.Dsl;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -56,13 +56,11 @@ public class BuilderParser {
 
     public TypeModel parseModel(Element element) {
         TypeModel model = factory.parameter((VariableElement) element).type();
-        Builder dsl = element.getAnnotation(Builder.class);
+        Dsl dsl = element.getAnnotation(Dsl.class);
 
         String packageName = override(dsl.packageName(), model.packageName());
-        String dslName = override(dsl.className(), model.rawType().simpleName() + "Builder");
-        String factoryMethodName = override(dsl.factoryMethod(), model.rawType().simpleName() + "With");
+        String dslName = override(dsl.className(), model.rawType().simpleName() + "With");
         TypeModel dslModel = factory.type(packageName, dslName);
-        dslModel.methods().add(factory.method(asList(PUBLIC, STATIC), unCapitalize(factoryMethodName), emptyList()).returnType(dslModel));
 
         ParserState start = start(dslModel);
         for(ExecutableElement constructor : constructorsIn(((DeclaredType) element.asType()).asElement().getEnclosedElements())) {
@@ -83,7 +81,7 @@ public class BuilderParser {
     }
 
     private ParserState start(TypeModel model) {
-        return new ParserContext(factory, model, null).new InitialState(model);
+        return new ParserContext(factory, model, null).new InitialState(STATIC);
     }
 
 }

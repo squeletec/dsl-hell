@@ -31,17 +31,17 @@ package fluent.dsl.parser;
 import fluent.api.model.*;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static fluent.dsl.model.DslUtils.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.element.Modifier.PUBLIC;
 
 public class ParserContext {
     private final ModelFactory factory;
@@ -68,14 +68,12 @@ public class ParserContext {
         @Override public ParserState method(String name) {
             return new DecideState(finish(null), name, false);
         }
-        Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
-            return node;
-        }
+        abstract Node finish(TypeModel returnTypeModel, StatementModel... bindingModel);
     }
 
     public class InitialState extends AbstractState {
-        public InitialState(TypeModel typeModel) {
-            super(new Node(typeModel));
+        public InitialState(Modifier... modifiers) {
+            super(new Node(asList(modifiers), dsl));
         }
         @Override public ParserState constant(String name) {
             return this;
@@ -84,6 +82,9 @@ public class ParserContext {
             return this;
         }
         @Override public void bind(ExecutableElement method) {
+        }
+        @Override Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
+            return node;
         }
     }
 
@@ -113,11 +114,10 @@ public class ParserContext {
         @Override public void bind(ExecutableElement method) {
             MethodModel body = factory.method(method);
             StatementModel binding = factory.statementModel(impl, body);
-            if(body.isConstructor()) {
+            if(body.isConstructor())
                 finish(factory.type(method.getEnclosingElement()), binding);
-            } else {
+            else
                 finish(body.returnType(), binding);
-            }
         }
         Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
             String className = capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type())).collect(joining());
@@ -144,9 +144,11 @@ public class ParserContext {
 
     final class Node {
         private final Map<String, Node> nodes = new LinkedHashMap<>();
+        private final Collection<Modifier> modifiers;
         private final TypeModel typeModel;
 
-        private Node(TypeModel typeModel) {
+        private Node(Collection<Modifier> modifiers, TypeModel typeModel) {
+            this.modifiers = modifiers;
             this.typeModel = typeModel;
         }
 
@@ -159,13 +161,13 @@ public class ParserContext {
                 ArrayList<TypeModel> newParameters = new ArrayList<>(map.values());
                 List<TypeModel> methodTypeParameters = newParameters.subList(typeParameters.size(), newParameters.size());
 
-                MethodModel methodModel = factory.method(methodName, parameters).returnType(isNull(typeModel)
+                MethodModel methodModel = factory.method(modifiers, methodName, parameters).returnType(isNull(typeModel)
                         ? factory.type("", className).typeParameters(newParameters)
                         : typeModel).typeParameters(methodTypeParameters).owner(this.typeModel);
                 methodModel.metadata().put("aliases", aliases);
                 methodModel.body().addAll(asList(bindingModel));
                 this.typeModel.methods().add(methodModel);
-                return new Node(methodModel.returnType());
+                return new Node(singleton(PUBLIC), methodModel.returnType());
             });
         }
     }
