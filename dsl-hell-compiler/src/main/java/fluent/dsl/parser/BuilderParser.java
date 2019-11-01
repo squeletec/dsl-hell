@@ -66,8 +66,9 @@ public class BuilderParser {
         String packageName = override(dsl.packageName(), model.packageName());
         String dslName = override(dsl.className(), model.rawType().simpleName() + "With");
         TypeModel dslModel = factory.type(packageName, dslName);
-        TypeModel builderModel = factory.type("", "Builder");
-        TypeModel builderImpl = factory.type("", "BuilderImpl");
+        TypeModel builderModel = factory.type("", "Builder").typeParameters(model.typeParameters());
+        TypeModel builderImpl = factory.type("", "BuilderImpl").typeParameters(builderModel.typeParameters());
+        builderImpl.interfaces().add(builderModel);
 
         ParserState start = start(dslModel, null, STATIC);
         Element typeElement = ((DeclaredType) element.asType()).asElement();
@@ -76,8 +77,8 @@ public class BuilderParser {
         boolean isBuilder = constructors.size() > 1 || !setters.isEmpty();
         VarModel object = factory.parameter(model, "object");
         if(isBuilder) {
-            dslModel.nestedClasses().add(builderModel);
-            builderModel.fields().add(object);
+            dslModel.nestedClasses().add(builderImpl);
+            builderImpl.fields().add(object);
         }
         for(ExecutableElement constructor : constructors) {
             ParserState state = start;

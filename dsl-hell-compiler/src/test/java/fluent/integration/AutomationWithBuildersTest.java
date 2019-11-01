@@ -2,6 +2,8 @@ package fluent.integration;
 
 import org.testng.annotations.Test;
 
+import java.time.LocalDate;
+
 import static fluent.integration.Order.Side.BUY;
 import static fluent.integration.OrderCheck.Factory.side;
 import static fluent.integration.OrderWith.orderId;
@@ -23,6 +25,8 @@ public class AutomationWithBuildersTest {
                 .and(
                         side(BUY).ric("A").quantity(moreThan(0))
                 );
+
+        Tester.injects(MessageWith.payload("").date(LocalDate.now()).build());
     }
 
 }

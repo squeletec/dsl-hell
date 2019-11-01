@@ -13,4 +13,6 @@ public interface AutomationWithBuilders {
 
     void verification(@mustSeeOrderWith @orderId String orderId, @When.and @FluentCheck Check<Order> check);
 
+    <T> void action(@injects @Dsl Message<T> message);
+
 }

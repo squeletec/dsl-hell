@@ -119,7 +119,7 @@ public class DslGenerator {
         println();
         nested.generateInterfaceContent(model);
         println();
-        model.nestedClasses().forEach(nested::generateInterface);
+        model.nestedClasses().stream().flatMap(impl -> impl.interfaces().stream()).forEach(nested::generateInterface);
         model.nestedClasses().forEach(nested::generateBuilderClass);
         println("}");
     }
@@ -145,7 +145,7 @@ public class DslGenerator {
     }
 
     private void generateDelegateMethod(MethodModel model, MethodModel delegate) {
-        println("default " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ") {");
+        println("default " + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ") {");
         indent().println(returnType(model) + delegate.name() + "()." + model.name() + "(" + args(model) + ");");
         println("}");
     }
@@ -167,14 +167,14 @@ public class DslGenerator {
         DslGenerator nested = indent();
         DslGenerator nested2 = nested.indent();
         println();
-        println("public class " + model.rawType().simpleName() + "Impl implements " + model.simpleName() + " {");
+        println("public class " + model.simpleName() + " implements " + model.interfaces().stream().map(TypeModel::fullName).collect(joining(", ")) + " {");
         model.fields().forEach(f -> nested.println("private final " + f.type().fullName() + " " + f.name() + ";"));
-        nested.println("" + model.rawType().simpleName() + "Impl(" + model.fields().stream().map(v -> v.type().fullName() + " " + v.name()).collect(joining()) + ") {");
+        nested.println("" + model.rawType().simpleName() + "(" + model.fields().stream().map(v -> v.type().fullName() + " " + v.name()).collect(joining()) + ") {");
         model.fields().forEach(f -> nested2.println("this." + f.name() + " = " + f.name() + ";"));
         nested.println("}");
-        model.methods().forEach(m -> {
+        model.interfaces().stream().flatMap(i -> i.methods().stream()).forEach(m -> {
             nested.println("public " + model.fullName() + " " + m.name() + "(" + parameters(m) + ") {");
-            nested2.println("object.set" + capitalize(m.name()) + "(" + m.parameters().stream().map(VarModel::name).collect(joining(", ")) + ");");
+            m.body().forEach(s -> nested2.println(s.toString()));
             nested2.println("return this;");
             nested.println("}");
         });
