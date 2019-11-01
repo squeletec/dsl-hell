@@ -68,5 +68,8 @@ public final class DslUtils {
         return out;
     }
 
+    public static String override(String configuredValue, String defaultValue) {
+        return configuredValue.isEmpty() ? defaultValue : configuredValue;
+    }
 
 }

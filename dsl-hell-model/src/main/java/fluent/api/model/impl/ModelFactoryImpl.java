@@ -2,10 +2,7 @@ package fluent.api.model.impl;
 
 import fluent.api.model.*;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -43,19 +40,22 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
     @Override
     public MethodModel method(Collection<Modifier> modifiers, String method, List<VarModel> parameters) {
-        return new MethodModelImpl(modifiers(modifiers), method, parameters);
+        return new MethodModelImpl(modifiers(modifiers), method, parameters, false);
     }
 
     @Override
     public MethodModel method(String method, List<VarModel> parameters) {
-        return new MethodModelImpl(modifiers(PUBLIC), method, parameters);
+        return new MethodModelImpl(modifiers(PUBLIC), method, parameters, false);
     }
 
     @Override
     public StatementModel statementModel(VarModel target, MethodModel method) {
         return new StatementModel() {
             @Override public String toString() {
-                return (method.returnsValue() ? "return " : "") + (method.modifiers().isStatic() ? target.type().fullName() : target.name()) + "." + method.name() + "(" + method.parameters().stream().map(VarModel::name).collect(joining(", ")) + ");";
+                String parameters = "(" + method.parameters().stream().map(VarModel::name).collect(joining(", ")) + ");";
+                if(method.isConstructor())
+                    return "return new " + method.owner().fullName() + parameters;
+                return (method.returnsValue() ? "return " : "") + (method.modifiers().isStatic() ? method.owner().fullName() : target.name()) + "." + method.name() + parameters;
             }
         };
     }
@@ -72,11 +72,15 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
     @Override
     public MethodModel method(ExecutableElement method) {
+        TypeModel owner = type(method.getEnclosingElement());
         return new MethodModelImpl(
                 modifiers(method.getModifiers()),
                 method.getSimpleName().toString(),
-                method.getParameters().stream().map(this::parameter).collect(toList())
-        ).returnType(visit(method.getReturnType()));
+                method.getParameters().stream().map(this::parameter).collect(toList()),
+                method.getKind() == ElementKind.CONSTRUCTOR
+        ).returnType(
+                method.getKind() == ElementKind.CONSTRUCTOR ? owner : visit(method.getReturnType())
+        ).owner(owner);
     }
 
 

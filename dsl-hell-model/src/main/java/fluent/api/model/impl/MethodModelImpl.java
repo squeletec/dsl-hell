@@ -17,11 +17,14 @@ public class MethodModelImpl extends GenericModelImpl<MethodModel> implements Me
     private final String name;
     private final List<VarModel> parameters;
     private final List<StatementModel> body = new ArrayList<>();
+    private final boolean isConstructor;
+    private TypeModel owner;
 
-    public MethodModelImpl(ModifiersModel modifiers, String name, List<VarModel> parameters) {
+    public MethodModelImpl(ModifiersModel modifiers, String name, List<VarModel> parameters, boolean isConstructor) {
         super(modifiers);
         this.name = name;
         this.parameters = parameters;
+        this.isConstructor = isConstructor;
     }
 
     @Override
@@ -51,8 +54,24 @@ public class MethodModelImpl extends GenericModelImpl<MethodModel> implements Me
     }
 
     @Override
+    public boolean isConstructor() {
+        return isConstructor;
+    }
+
+    @Override
     public List<StatementModel> body() {
         return body;
+    }
+
+    @Override
+    public TypeModel owner() {
+        return owner;
+    }
+
+    @Override
+    public MethodModel owner(TypeModel owner) {
+        this.owner = owner;
+        return this;
     }
 
     @Override

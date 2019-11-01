@@ -37,8 +37,12 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 
+import static fluent.dsl.model.DslUtils.override;
 import static fluent.dsl.model.DslUtils.unCapitalize;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
@@ -54,9 +58,11 @@ public class BuilderParser {
         TypeModel model = factory.parameter((VariableElement) element).type();
         Builder dsl = element.getAnnotation(Builder.class);
 
-        String packageName = dsl.packageName().isEmpty() ? model.packageName() : dsl.packageName();
-        String dslName = dsl.className().isEmpty() ? model.rawType().simpleName() + "Builder" : dsl.className();
+        String packageName = override(dsl.packageName(), model.packageName());
+        String dslName = override(dsl.className(), model.rawType().simpleName() + "Builder");
+        String factoryMethodName = override(dsl.factoryMethod(), model.rawType().simpleName() + "With");
         TypeModel dslModel = factory.type(packageName, dslName);
+        dslModel.methods().add(factory.method(asList(PUBLIC, STATIC), unCapitalize(factoryMethodName), emptyList()).returnType(dslModel));
 
         ParserState start = start(dslModel);
         for(ExecutableElement constructor : constructorsIn(((DeclaredType) element.asType()).asElement().getEnclosedElements())) {

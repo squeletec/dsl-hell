@@ -71,7 +71,7 @@ public @interface Builder {
      *
      * @return Name of the factory method. Default is "create".
      */
-    String factoryMethod() default "create";
+    String factoryMethod() default "";
 
     /**
      * Applies to both usages (however not yet properly reflected when used in use case #2)

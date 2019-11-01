@@ -30,6 +30,7 @@ package fluent.dsl.parser;
 
 import fluent.api.model.*;
 
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import java.util.ArrayList;
@@ -113,7 +114,11 @@ public class ParserContext {
         @Override public void bind(ExecutableElement method) {
             MethodModel body = factory.method(method);
             StatementModel binding = factory.statementModel(impl, body);
-            finish(body.returnType(), binding);
+            if(body.isConstructor()) {
+                finish(factory.type(method.getEnclosingElement()), binding);
+            } else {
+                finish(body.returnType(), binding);
+            }
         }
         Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
             String className = capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type())).collect(joining());
@@ -157,7 +162,7 @@ public class ParserContext {
 
                 MethodModel methodModel = factory.method(methodName, parameters).returnType(isNull(typeModel)
                         ? factory.type("", className).typeParameters(newParameters)
-                        : typeModel).typeParameters(methodTypeParameters);
+                        : typeModel).typeParameters(methodTypeParameters).owner(this.methodModel.returnType());
                 methodModel.metadata().put("aliases", aliases);
                 methodModel.body().addAll(asList(bindingModel));
                 this.methodModel.returnType().methods().add(methodModel);

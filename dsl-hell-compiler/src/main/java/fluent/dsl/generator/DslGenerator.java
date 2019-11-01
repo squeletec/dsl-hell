@@ -178,7 +178,7 @@ public class DslGenerator {
     }
 
     private void generateMethod(MethodModel model) {
-        println("public " + (model.modifiers().isStatic() ? "static " : "") + generic(model) + " " + model.returnType().simpleName() + " " + model.name() + "(" + parameters(model) + ") {");
+        println("public " + (model.modifiers().isStatic() ? "static " : "") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ") {");
         DslGenerator nested = indent();
         if(model.body().isEmpty()) {
             nested.generateReturnAnonymousClass(model.returnType());

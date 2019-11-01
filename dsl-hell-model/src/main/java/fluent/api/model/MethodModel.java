@@ -42,6 +42,11 @@ public interface MethodModel extends GenericModel<MethodModel> {
 
     boolean returnsValue();
 
+    boolean isConstructor();
+
     List<StatementModel> body();
 
+    TypeModel owner();
+
+    MethodModel owner(TypeModel owner);
 }
