@@ -28,20 +28,25 @@
  */
 package fluent.dsl.parser;
 
+import fluent.api.model.MethodModel;
 import fluent.api.model.ModelFactory;
 import fluent.api.model.TypeModel;
+import fluent.api.model.VarModel;
 import fluent.dsl.Dsl;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 
+import java.util.List;
+
 import static fluent.dsl.model.DslUtils.override;
 import static fluent.dsl.model.DslUtils.unCapitalize;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static javax.lang.model.element.Modifier.PUBLIC;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -61,18 +66,34 @@ public class BuilderParser {
         String packageName = override(dsl.packageName(), model.packageName());
         String dslName = override(dsl.className(), model.rawType().simpleName() + "With");
         TypeModel dslModel = factory.type(packageName, dslName);
+        TypeModel builderModel = factory.type("", "Builder");
+        TypeModel builderImpl = factory.type("", "BuilderImpl");
 
-        ParserState start = start(dslModel);
-        for(ExecutableElement constructor : constructorsIn(((DeclaredType) element.asType()).asElement().getEnclosedElements())) {
+        ParserState start = start(dslModel, null, STATIC);
+        Element typeElement = ((DeclaredType) element.asType()).asElement();
+        List<ExecutableElement> constructors = constructorsIn(typeElement.getEnclosedElements());
+        List<ExecutableElement> setters = methodsIn(typeElement.getEnclosedElements()).stream().filter(this::isSetter).collect(toList());
+        boolean isBuilder = constructors.size() > 1 || !setters.isEmpty();
+        VarModel object = factory.parameter(model, "object");
+        if(isBuilder) {
+            dslModel.nestedClasses().add(builderModel);
+            builderModel.fields().add(object);
+        }
+        for(ExecutableElement constructor : constructors) {
             ParserState state = start;
             for (VariableElement parameter : constructor.getParameters())
                 state = state.keyword(parameter.getSimpleName().toString(), emptyList(), true).parameter(parameter);
-            state.bind(constructor);
+            MethodModel constructorModel = factory.method(constructor);
+            if(isBuilder)
+                state.bind(factory.constructor(builderImpl, factory.parameter(model, constructorCall(constructorModel))));
+            else
+                state.bind(constructorModel);
         }
-        for (ExecutableElement setter : methodsIn(element.getEnclosedElements())) if(isSetter(setter))
-            start.keyword(unCapitalize(setter.getSimpleName().toString().substring(3)), emptyList(), true)
+        ParserState builder = start(builderModel, object);
+        for (ExecutableElement setter : setters)
+            builder.keyword(unCapitalize(setter.getSimpleName().toString().substring(3)), emptyList(), true)
                     .parameter(setter.getParameters().get(0))
-                    .bind(setter);
+                    .bind(factory.method(setter), builderModel);
         return dslModel;
     }
 
@@ -80,8 +101,11 @@ public class BuilderParser {
         return element.getSimpleName().toString().startsWith("set") && element.getParameters().size() == 1;
     }
 
-    private ParserState start(TypeModel model) {
-        return new ParserContext(factory, model, null).new InitialState(STATIC);
+    private ParserState start(TypeModel model, VarModel object, Modifier... modifiers) {
+        return new ParserContext(factory, model, object).new InitialState(modifiers);
     }
 
+    private String constructorCall(MethodModel constructor) {
+        return "new " + constructor.returnType().fullName() + "(" + constructor.parameters().stream().map(VarModel::name).collect(joining(", ")) + ")";
+    }
 }

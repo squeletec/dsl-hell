@@ -22,6 +22,7 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     private List<VarModel> fields = new ArrayList<>();
     private List<MethodModel> methods = new ArrayList<>();
     private List<TypeModel> interfaces = new ArrayList<>();
+    private final List<TypeModel> nestedClasses = new ArrayList<>();
     public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind) {
         super(modifiers);
         this.packageName = packageName;
@@ -118,6 +119,11 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     public TypeModel superClass(TypeModel superClass) {
         this.superClass = superClass;
         return this;
+    }
+
+    @Override
+    public List<TypeModel> nestedClasses() {
+        return nestedClasses;
     }
 
     @Override

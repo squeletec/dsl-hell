@@ -32,4 +32,6 @@ public interface ModelFactory {
 
     MethodModel method(ExecutableElement method);
 
+    MethodModel constructor(TypeModel builderModel, VarModel... parameters);
+
 }

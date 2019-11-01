@@ -64,4 +64,6 @@ public interface TypeModel extends GenericModel<TypeModel> {
 
     TypeModel superClass(TypeModel dslType);
 
+    List<TypeModel> nestedClasses();
+
 }

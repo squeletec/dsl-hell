@@ -1,8 +1,5 @@
 package fluent.integration;
 
-import fluent.api.FluentParameters;
-import fluent.api.NamedParameters;
-
 public class Order {
 
     private final String orderId;
@@ -11,7 +8,6 @@ public class Order {
     private final String ric;
     private final double price;
 
-    @NamedParameters
     public Order(String orderId, Side side, int quantity, String ric, double price) {
         this.orderId = orderId;
         this.side = side;

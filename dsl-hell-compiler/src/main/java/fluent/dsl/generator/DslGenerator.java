@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static fluent.dsl.model.DslUtils.capitalize;
 import static fluent.dsl.model.DslUtils.generic;
 import static java.util.stream.Collectors.joining;
 
@@ -118,6 +119,8 @@ public class DslGenerator {
         println();
         nested.generateInterfaceContent(model);
         println();
+        model.nestedClasses().forEach(nested::generateInterface);
+        model.nestedClasses().forEach(nested::generateBuilderClass);
         println("}");
     }
 
@@ -157,6 +160,27 @@ public class DslGenerator {
         println();
         println("public interface " + model.simpleName() + " {");
         indent().generateInterfaceContent(model);
+        println("}");
+    }
+
+    private void generateBuilderClass(TypeModel model) {
+        DslGenerator nested = indent();
+        DslGenerator nested2 = nested.indent();
+        println();
+        println("public class " + model.rawType().simpleName() + "Impl implements " + model.simpleName() + " {");
+        model.fields().forEach(f -> nested.println("private final " + f.type().fullName() + " " + f.name() + ";"));
+        nested.println("" + model.rawType().simpleName() + "Impl(" + model.fields().stream().map(v -> v.type().fullName() + " " + v.name()).collect(joining()) + ") {");
+        model.fields().forEach(f -> nested2.println("this." + f.name() + " = " + f.name() + ";"));
+        nested.println("}");
+        model.methods().forEach(m -> {
+            nested.println("public " + model.fullName() + " " + m.name() + "(" + parameters(m) + ") {");
+            nested2.println("object.set" + capitalize(m.name()) + "(" + m.parameters().stream().map(VarModel::name).collect(joining(", ")) + ");");
+            nested2.println("return this;");
+            nested.println("}");
+        });
+        nested.println("public " + model.fields().get(0).type().fullName() + " build() {");
+        nested2.println("return " + model.fields().get(0).name() + ";");
+        nested.println("}");
         println("}");
     }
 

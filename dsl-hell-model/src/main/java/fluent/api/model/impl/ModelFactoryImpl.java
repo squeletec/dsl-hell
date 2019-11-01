@@ -83,6 +83,11 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
         ).owner(owner);
     }
 
+    @Override
+    public MethodModel constructor(TypeModel type, VarModel... parameters) {
+        return new MethodModelImpl(modifiers(PUBLIC, STATIC), "<init>", asList(parameters), true).owner(type).returnType(type);
+    }
+
 
     @Override
     public TypeModel visit(TypeMirror t, Element typeElement) {

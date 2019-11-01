@@ -81,7 +81,9 @@ public class ParserContext {
         @Override public ParserState parameter(VariableElement parameterModel) {
             return this;
         }
-        @Override public void bind(ExecutableElement method) {
+        @Override public void bind(MethodModel method) {
+        }
+        @Override public void bind(MethodModel method, TypeModel returnType) {
         }
         @Override Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
             return node;
@@ -111,14 +113,16 @@ public class ParserContext {
             parameters.add(factory.parameter(parameterModel));
             return this;
         }
-        @Override public void bind(ExecutableElement method) {
-            MethodModel body = factory.method(method);
-            StatementModel binding = factory.statementModel(impl, body);
-            if(body.isConstructor())
-                finish(factory.type(method.getEnclosingElement()), binding);
-            else
-                finish(body.returnType(), binding);
+        @Override public void bind(MethodModel body) {
+            bind(body, body.returnType());
         }
+
+        @Override
+        public void bind(MethodModel body, TypeModel returnType) {
+            StatementModel binding = factory.statementModel(impl, body);
+            finish(returnType, binding);
+        }
+
         Node finish(TypeModel returnTypeModel, StatementModel... bindingModel) {
             String className = capitalize(methodName) + parameters.stream().map(p -> simpleName(p.type())).collect(joining());
             return node.add(returnTypeModel, className, methodName, aliases, parameters, bindingModel);

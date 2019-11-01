@@ -64,7 +64,7 @@ public class DslParser {
         MethodModel factoryMethod = factory.method(asList(PUBLIC, STATIC), dsl.factoryMethod(), singletonList(source)).typeParameters(model.typeParameters()).returnType(dslType);
         dslType.methods().add(factoryMethod);
 
-        ParserState prefix = start(dslType);
+        ParserState prefix = start(dslType, source);
         for(AnnotationMirror annotation : element.getAnnotationMirrors())
             prefix = annotationState(prefix, annotation);
         for(ExecutableElement method : methodsIn(element.getEnclosedElements())) {
@@ -76,7 +76,7 @@ public class DslParser {
             }
             for(AnnotationMirror annotation : method.getAnnotationMirrors())
                 state = annotationState(state, annotation);
-            state.bind(method);
+            state.bind(factory.method(method));
         }
         return factory.type("", "Delegate").typeParameters(model.typeParameters()).superClass(dslType)
                 .methods(singletonList(factory.method(dsl.delegateMethod()).returnType(dslType)));
@@ -113,9 +113,8 @@ public class DslParser {
         return null;
     }
 
-    private ParserState start(TypeModel model) {
-        MethodModel factoryMethod = model.methods().get(0);
-        return new ParserContext(factory, model, factoryMethod.parameters().get(0)).new InitialState();
+    private ParserState start(TypeModel model, VarModel impl) {
+        return new ParserContext(factory, model, impl).new InitialState();
     }
 
 }
