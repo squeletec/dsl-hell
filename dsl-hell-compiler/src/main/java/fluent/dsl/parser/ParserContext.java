@@ -30,7 +30,6 @@ package fluent.dsl.parser;
 
 import fluent.api.model.*;
 
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import java.util.ArrayList;
@@ -75,8 +74,8 @@ public class ParserContext {
     }
 
     public class InitialState extends AbstractState {
-        public InitialState(MethodModel factoryMethod) {
-            super(new Node(factoryMethod));
+        public InitialState(TypeModel typeModel) {
+            super(new Node(typeModel));
         }
         @Override public ParserState constant(String name) {
             return this;
@@ -145,15 +144,15 @@ public class ParserContext {
 
     final class Node {
         private final Map<String, Node> nodes = new LinkedHashMap<>();
-        private final MethodModel methodModel;
+        private final TypeModel typeModel;
 
-        private Node(MethodModel methodModel) {
-            this.methodModel = methodModel;
+        private Node(TypeModel typeModel) {
+            this.typeModel = typeModel;
         }
 
         public Node add(TypeModel typeModel, String className, String methodName, List<String> aliases, List<VarModel> parameters, StatementModel[] bindingModel) {
             return nodes.computeIfAbsent(className, key -> {
-                List<TypeModel> typeParameters = this.methodModel.returnType().typeParameters();
+                List<TypeModel> typeParameters = this.typeModel.typeParameters();
                 Map<String, TypeModel> map = new LinkedHashMap<>();
                 typeParameters.forEach(p -> map.put(p.fullName(), p));
                 usedTypeParameters(parameters).forEach(t -> map.put(t.fullName(), t));
@@ -162,11 +161,11 @@ public class ParserContext {
 
                 MethodModel methodModel = factory.method(methodName, parameters).returnType(isNull(typeModel)
                         ? factory.type("", className).typeParameters(newParameters)
-                        : typeModel).typeParameters(methodTypeParameters).owner(this.methodModel.returnType());
+                        : typeModel).typeParameters(methodTypeParameters).owner(this.typeModel);
                 methodModel.metadata().put("aliases", aliases);
                 methodModel.body().addAll(asList(bindingModel));
-                this.methodModel.returnType().methods().add(methodModel);
-                return new Node(methodModel);
+                this.typeModel.methods().add(methodModel);
+                return new Node(methodModel.returnType());
             });
         }
     }

@@ -83,7 +83,7 @@ public class BuilderParser {
     }
 
     private ParserState start(TypeModel model) {
-        return new ParserContext(factory, model, null).new InitialState(factory.method("artificial").returnType(model));
+        return new ParserContext(factory, model, null).new InitialState(model);
     }
 
 }

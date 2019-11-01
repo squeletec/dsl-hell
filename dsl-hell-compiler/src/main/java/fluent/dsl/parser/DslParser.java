@@ -114,7 +114,7 @@ public class DslParser {
 
     private ParserState start(TypeModel model) {
         MethodModel factoryMethod = model.methods().get(0);
-        return new ParserContext(factory, model, factoryMethod.parameters().get(0)).new InitialState(factoryMethod);
+        return new ParserContext(factory, model, factoryMethod.parameters().get(0)).new InitialState(model);
     }
 
 }
