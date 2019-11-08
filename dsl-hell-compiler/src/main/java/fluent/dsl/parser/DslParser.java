@@ -29,16 +29,23 @@
 package fluent.dsl.parser;
 
 import fluent.api.model.*;
-import fluent.dsl.Dsl;
 import fluent.dsl.Constant;
+import fluent.dsl.Dsl;
+import fluent.dsl.model.DslUtils;
 
 import javax.lang.model.element.*;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import static fluent.dsl.model.DslUtils.getDsl;
 import static fluent.dsl.model.DslUtils.override;
+import static fluent.dsl.model.DslUtils.from;
+import static fluent.dsl.parser.InitialState.start;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toCollection;
 import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
@@ -64,57 +71,42 @@ public class DslParser {
         MethodModel factoryMethod = factory.method(asList(PUBLIC, STATIC), dsl.factoryMethod(), singletonList(source)).typeParameters(model.typeParameters()).returnType(dslType);
         dslType.methods().add(factoryMethod);
 
-        ParserState prefix = start(dslType, source);
+        parseMethods(element, start(factory, dslType, PUBLIC), source);
+        return factory.type("", "Delegate").typeParameters(model.typeParameters()).superClass(dslType).methods(singletonList(factory.method(dsl.delegateMethod()).returnType(dslType)));
+    }
+
+
+
+    public void parseMethods(Element element, State state, VarModel impl) {
         for(AnnotationMirror annotation : element.getAnnotationMirrors())
-            prefix = annotationState(prefix, annotation);
-        for(ExecutableElement method : methodsIn(element.getEnclosedElements())) {
-            ParserState state = prefix.method(method.getSimpleName().toString());
-            for (VariableElement parameter : method.getParameters()) {
-                for(AnnotationMirror annotation : parameter.getAnnotationMirrors())
-                    state = annotationState(state, annotation);
-                state = state.parameter(parameter);
-            }
-            for(AnnotationMirror annotation : method.getAnnotationMirrors())
-                state = annotationState(state, annotation);
-            state.bind(factory.method(method));
-        }
-        return factory.type("", "Delegate").typeParameters(model.typeParameters()).superClass(dslType)
-                .methods(singletonList(factory.method(dsl.delegateMethod()).returnType(dslType)));
+            state = annotation(state, annotation);
+        for(ExecutableElement method : methodsIn(element.getEnclosedElements()))
+            parseParameters(method, state.method(from(method)), impl);
     }
 
-    private ParserState annotationState(ParserState prev, AnnotationMirror annotation) {
+    public void parseParameters(ExecutableElement method, State state, VarModel impl) {
+        for (VariableElement parameter : method.getParameters()) {
+            for(AnnotationMirror annotation : parameter.getAnnotationMirrors())
+                state = annotation(state, annotation);
+            state = state.parameter(factory.parameter(parameter));
+        }
+        for(AnnotationMirror annotation : method.getAnnotationMirrors())
+            state = annotation(state, annotation);
+        MethodModel methodModel = factory.method(method);
+        state.body(methodModel.returnType(), factory.statementModel(impl, methodModel));
+    }
+
+    public State annotation(State state, AnnotationMirror annotation) {
         Element element = annotation.getAnnotationType().asElement();
-        String name = element.getSimpleName().toString();
         if(nonNull(element.getAnnotation(Constant.class)))
-            return prev.constant(name);
-        Dsl dsl = getDsl(element);
-        if(nonNull(dsl))
-            return prev.keyword(name, element.getEnclosedElements().stream()
-                    .filter(e -> e.getKind() == ANNOTATION_TYPE)
-                    .map(e -> e.getSimpleName().toString())
-                    .collect(toList()), dsl.useVarargs());
-        return prev;
+            return state.constant(factory.constant(from(element)));
+        if(nonNull(getDsl(element)))
+            return state.keyword(from(element), aliases(element));
+        return state;
     }
 
-    private static Dsl getDsl(Element element) {
-        Dsl dsl = element.getAnnotation(Dsl.class);
-        if(nonNull(dsl))
-            return dsl;
-        Element enclosingElement = element.getEnclosingElement();
-        if(nonNull(enclosingElement))
-            return getDsl(enclosingElement);
-        try {
-            Element packageElement = (Element) element.getClass().getField("owner").get(element);
-            if(nonNull(packageElement))
-                return getDsl(packageElement);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private ParserState start(TypeModel model, VarModel impl) {
-        return new ParserContext(factory, model, impl).new InitialState();
+    private Set<String> aliases(Element element) {
+        return element.getEnclosedElements().stream().filter(e -> e.getKind() == ANNOTATION_TYPE).map(DslUtils::from).collect(toCollection(LinkedHashSet::new));
     }
 
 }

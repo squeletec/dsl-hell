@@ -34,4 +34,5 @@ public interface ModelFactory {
 
     MethodModel constructor(TypeModel builderModel, VarModel... parameters);
 
+    VarModel constant(String name);
 }

@@ -25,4 +25,8 @@ public class VarModelImpl extends ElementModelImpl implements VarModel {
         return name;
     }
 
+    @Override
+    public String toString() {
+        return type() + " " + name();
+    }
 }

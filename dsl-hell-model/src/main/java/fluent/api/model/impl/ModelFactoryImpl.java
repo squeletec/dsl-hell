@@ -9,8 +9,8 @@ import javax.lang.model.util.Types;
 import java.util.*;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.*;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.type.TypeKind.DECLARED;
@@ -52,6 +52,9 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     public StatementModel statementModel(VarModel target, MethodModel method) {
         return new StatementModel() {
             @Override public String toString() {
+                if(isNull(method)) {
+                    return "return " + target.name() + ";";
+                }
                 String parameters = "(" + method.parameters().stream().map(VarModel::name).collect(joining(", ")) + ");";
                 if(method.isConstructor())
                     return "return new " + method.owner().fullName() + parameters;
@@ -62,7 +65,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
     @Override
     public TypeModel type(Element element) {
-        return visit(element.asType(), element);
+        return visit(element.asType(), element).existing();
     }
 
     @Override
@@ -86,6 +89,11 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     @Override
     public MethodModel constructor(TypeModel type, VarModel... parameters) {
         return new MethodModelImpl(modifiers(PUBLIC, STATIC), "<init>", asList(parameters), true).owner(type).returnType(type);
+    }
+
+    @Override
+    public VarModel constant(String name) {
+        return parameter(type("", name), name);
     }
 
 
@@ -130,9 +138,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
                 component.simpleName() + "[]",
                 t.toString(),
                 t.getKind()
-        ).componentType(component)
-                .methods(new LazyList<>(() -> methodsIn(element.getEnclosedElements()).stream().map(this::method).collect(toList())))
-                .fields(new LazyList<>(() -> fieldsIn(element.getEnclosedElements()).stream().map(this::parameter).collect(toList())));
+        ).componentType(component);
     }
 
     @Override
@@ -140,7 +146,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
         List<TypeModel> s = new LazyList<>(() -> t.getTypeArguments().stream().map(this::visit).collect(toList()));
         String packageName = elements.getPackageOf(element).getQualifiedName().toString();
         List<MethodModel> m = new LazyList<>(() -> methodsIn(element.getEnclosedElements()).stream().map(this::method).collect(toList()));
-        List<VarModel> v = new LazyList<>(() -> fieldsIn(element.getEnclosedElements()).stream().map(this::parameter).collect(toList()));
+        Map<String, VarModel> v = new LazyMap<>(() -> fieldsIn(element.getEnclosedElements()).stream().map(this::parameter).collect(toMap(VarModel::name, e -> e)));
 
         return new TypeModelImpl(
                 modifiers(element.getModifiers()),

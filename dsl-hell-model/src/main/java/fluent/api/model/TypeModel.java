@@ -29,6 +29,7 @@
 package fluent.api.model;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TypeModel extends GenericModel<TypeModel> {
 
@@ -54,9 +55,9 @@ public interface TypeModel extends GenericModel<TypeModel> {
 
     TypeModel methods(List<MethodModel> methods);
 
-    List<VarModel> fields();
+    Map<String, VarModel> fields();
 
-    TypeModel fields(List<VarModel> fields);
+    TypeModel fields(Map<String, VarModel> fields);
 
     TypeModel superClass();
 
@@ -66,4 +67,7 @@ public interface TypeModel extends GenericModel<TypeModel> {
 
     List<TypeModel> nestedClasses();
 
+    boolean generate();
+
+    TypeModel existing();
 }

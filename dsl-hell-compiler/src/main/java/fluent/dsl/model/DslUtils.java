@@ -31,11 +31,16 @@ package fluent.dsl.model;
 import fluent.api.model.GenericModel;
 import fluent.api.model.TypeModel;
 import fluent.api.model.VarModel;
+import fluent.dsl.Dsl;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.element.Modifier.STATIC;
 
 public final class DslUtils {
 
@@ -70,6 +75,36 @@ public final class DslUtils {
 
     public static String override(String configuredValue, String defaultValue) {
         return configuredValue.isEmpty() ? defaultValue : configuredValue;
+    }
+
+
+    public static boolean isSetter(ExecutableElement method) {
+        return !method.getModifiers().contains(STATIC) && method.getSimpleName().toString().startsWith("set") && method.getParameters().size() == 1;
+    }
+
+    public static boolean isGetter(ExecutableElement method) {
+        return !method.getModifiers().contains(STATIC) && method.getSimpleName().toString().startsWith("get") && method.getParameters().size() == 0;
+    }
+
+    public static Dsl getDsl(Element element) {
+        Dsl dsl = element.getAnnotation(Dsl.class);
+        if(nonNull(dsl))
+            return dsl;
+        Element enclosingElement = element.getEnclosingElement();
+        if(nonNull(enclosingElement))
+            return getDsl(enclosingElement);
+        try {
+            Element packageElement = (Element) element.getClass().getField("owner").get(element);
+            if(nonNull(packageElement))
+                return getDsl(packageElement);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String from(Element element) {
+        return element.getSimpleName().toString();
     }
 
 }

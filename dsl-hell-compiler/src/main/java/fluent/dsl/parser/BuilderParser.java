@@ -28,11 +28,12 @@
  */
 package fluent.dsl.parser;
 
-import fluent.api.model.MethodModel;
-import fluent.api.model.ModelFactory;
-import fluent.api.model.TypeModel;
-import fluent.api.model.VarModel;
+import fluent.api.model.*;
 import fluent.dsl.Dsl;
+import fluent.dsl.model.DslUtils;
+
+import static fluent.dsl.model.DslUtils.*;
+import static fluent.dsl.parser.InitialState.start;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -41,12 +42,11 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 
 import java.util.List;
+import java.util.function.Function;
 
-import static fluent.dsl.model.DslUtils.override;
-import static fluent.dsl.model.DslUtils.unCapitalize;
-import static java.util.Collections.emptyList;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -68,45 +68,49 @@ public class BuilderParser {
         TypeModel dslModel = factory.type(packageName, dslName);
         TypeModel builderModel = factory.type("", "Builder").typeParameters(model.typeParameters());
         TypeModel builderImpl = factory.type("", "BuilderImpl").typeParameters(builderModel.typeParameters());
+        VarModel object = factory.parameter(model, "object");
         builderImpl.interfaces().add(builderModel);
+        builderImpl.fields().put(object.name(), object);
 
-        ParserState start = start(dslModel, null, STATIC);
         Element typeElement = ((DeclaredType) element.asType()).asElement();
         List<ExecutableElement> constructors = constructorsIn(typeElement.getEnclosedElements());
-        List<ExecutableElement> setters = methodsIn(typeElement.getEnclosedElements()).stream().filter(this::isSetter).collect(toList());
-        boolean isBuilder = constructors.size() > 1 || !setters.isEmpty();
-        VarModel object = factory.parameter(model, "object");
-        if(isBuilder) {
+        boolean hasSetters = methodsIn(typeElement.getEnclosedElements()).stream().anyMatch(DslUtils::isSetter);
+        if(hasSetters || constructors.size() > 1) {
+            readConstructors(typeElement, start(factory, dslModel, PUBLIC, STATIC), c -> builderConstructor(c, builderImpl), builderModel);
+            State state = start(factory, builderModel, PUBLIC);
+            VarModel thisModel = factory.parameter(builderImpl, "this");
+            for (ExecutableElement method : methodsIn(typeElement.getEnclosedElements()))
+                if(isSetter(method))
+                    state.keyword(unCapitalize(method.getSimpleName().toString().substring(3)))
+                            .parameter(factory.parameter(method.getParameters().get(0)))
+                            .body(builderModel, factory.statementModel(object, factory.method(method)), factory.statementModel(thisModel, null));
             dslModel.nestedClasses().add(builderImpl);
-            builderImpl.fields().add(object);
+            MethodModel buildMethod = factory.method("build").returnType(model);
+            buildMethod.body().add(factory.statementModel(object, null));
+            builderModel.methods().add(buildMethod);
+        } else if(constructors.size() == 1 && constructors.get(0).getParameters().size() > 0) {
+            readConstructors(typeElement, start(factory, dslModel, PUBLIC, STATIC), identity(), model);
         }
-        for(ExecutableElement constructor : constructors) {
-            ParserState state = start;
-            for (VariableElement parameter : constructor.getParameters())
-                state = state.keyword(parameter.getSimpleName().toString(), emptyList(), true).parameter(parameter);
-            MethodModel constructorModel = factory.method(constructor);
-            if(isBuilder)
-                state.bind(factory.constructor(builderImpl, factory.parameter(model, constructorCall(constructorModel))));
-            else
-                state.bind(constructorModel);
-        }
-        ParserState builder = start(builderModel, object);
-        for (ExecutableElement setter : setters)
-            builder.keyword(unCapitalize(setter.getSimpleName().toString().substring(3)), emptyList(), true)
-                    .parameter(setter.getParameters().get(0))
-                    .bind(factory.method(setter), builderModel);
         return dslModel;
-    }
-
-    private boolean isSetter(ExecutableElement element) {
-        return element.getSimpleName().toString().startsWith("set") && element.getParameters().size() == 1;
-    }
-
-    private ParserState start(TypeModel model, VarModel object, Modifier... modifiers) {
-        return new ParserContext(factory, model, object).new InitialState(modifiers);
     }
 
     private String constructorCall(MethodModel constructor) {
         return "new " + constructor.returnType().fullName() + "(" + constructor.parameters().stream().map(VarModel::name).collect(joining(", ")) + ")";
     }
+
+    public void readConstructors(Element element, State state, Function<MethodModel, MethodModel> constructorFactory, TypeModel returnType) {
+        for(ExecutableElement constructor : constructorsIn(element.getEnclosedElements()))
+            readMethodParameters(constructor, state, constructorFactory, returnType);
+    }
+
+    public void readMethodParameters(ExecutableElement method, State state, Function<MethodModel, MethodModel> constructor, TypeModel returnType) {
+        for (VariableElement parameter : method.getParameters())
+            state = state.keyword(from(parameter)).parameter(factory.parameter(parameter));
+        state.body(returnType, factory.statementModel(null, constructor.apply(factory.method(method))));
+    }
+
+    public MethodModel builderConstructor(MethodModel constructor, TypeModel typeModel) {
+        return factory.constructor(typeModel, factory.parameter(constructor.returnType(), constructorCall(constructor)));
+    }
+
 }

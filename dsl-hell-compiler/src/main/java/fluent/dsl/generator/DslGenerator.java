@@ -96,13 +96,13 @@ public class DslGenerator {
         println();
         println("@Generated(\"Generated DSL class\")");
         println("public interface " + model.simpleName() + " {");
-        model.fields().forEach(nested::generateConstant);
+        model.fields().values().forEach(nested::generateConstant);
         println();
         nested.generateInterfaceContent(model);
         println();
         nested.generateDelegate(delegateModel);
         println();
-        model.fields().forEach(nested::generateConstantClass);
+        model.fields().values().forEach(nested::generateConstantClass);
         println("}");
     }
 
@@ -153,7 +153,7 @@ public class DslGenerator {
     private void generateInterfaceContent(TypeModel model) {
         generated.add(model);
         model.methods().forEach(this::generateSignature);
-        model.methods().stream().filter(kw -> kw.body().isEmpty()).map(MethodModel::returnType).filter(t -> !generated.contains(t)).forEach(this::generateInterface);
+        model.methods().stream().filter(kw -> kw.body().isEmpty()).map(MethodModel::returnType).filter(t -> !generated.contains(t) || !t.generate()).forEach(this::generateInterface);
     }
 
     private void generateInterface(TypeModel model) {
@@ -168,19 +168,15 @@ public class DslGenerator {
         DslGenerator nested2 = nested.indent();
         println();
         println("public class " + model.simpleName() + " implements " + model.interfaces().stream().map(TypeModel::fullName).collect(joining(", ")) + " {");
-        model.fields().forEach(f -> nested.println("private final " + f.type().fullName() + " " + f.name() + ";"));
-        nested.println("" + model.rawType().simpleName() + "(" + model.fields().stream().map(v -> v.type().fullName() + " " + v.name()).collect(joining()) + ") {");
-        model.fields().forEach(f -> nested2.println("this." + f.name() + " = " + f.name() + ";"));
+        model.fields().forEach((n, f) -> nested.println("private final " + f.type().fullName() + " " + n + ";"));
+        nested.println("" + model.rawType().simpleName() + "(" + model.fields().values().stream().map(v -> v.type().fullName() + " " + v.name()).collect(joining()) + ") {");
+        model.fields().forEach((n, f) -> nested2.println("this." + n + " = " + n + ";"));
         nested.println("}");
         model.interfaces().stream().flatMap(i -> i.methods().stream()).forEach(m -> {
-            nested.println("public " + model.fullName() + " " + m.name() + "(" + parameters(m) + ") {");
+            nested.println("public " + m.returnType().fullName() + " " + m.name() + "(" + parameters(m) + ") {");
             m.body().forEach(s -> nested2.println(s.toString()));
-            nested2.println("return this;");
             nested.println("}");
         });
-        nested.println("public " + model.fields().get(0).type().fullName() + " build() {");
-        nested2.println("return " + model.fields().get(0).name() + ";");
-        nested.println("}");
         println("}");
     }
 
@@ -189,7 +185,7 @@ public class DslGenerator {
             generateMethod(model);
         else {
             println((model.body().isEmpty() ? "@Start(\"Unterminated sentence.\") " : "@End ") + generic(model) + " " + model.returnType().fullName() + " " + model.name() + "(" + parameters(model) + ");");
-            ((List<String>)model.metadata().getOrDefault("aliases", Collections.emptyList())).forEach(alias -> {
+            ((Set<String>)model.metadata().getOrDefault("aliases", Collections.emptySet())).forEach(alias -> {
                 println("default " + generic(model) + " " + model.returnType().fullName() + " " + alias + "(" + parameters(model) + ") {");
                 indent().println(returnType(model) + model.name() + "(" + args(model) + ");");
                 println("}");

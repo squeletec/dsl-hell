@@ -466,6 +466,17 @@ When (User). entersUsername (validUsername). andPassword (validPassword). atUrl 
 
 Note extra spaces making the Java statement look a bit like a sentence with placeholders. 
 
+### 6. Combination with other DSL constructs
+
+Fluent DSL generated using this tool doesn't support to incorporate fluent builders or other extensions to it.
+However it is possible to combine it with other DSL constructs.
+
+#### 6.1 Fluent builders
+
+#### 6.2 Validators
+
+
+
 ## Usefull links
 
 https://github.com/c0stra/fluent-api-end-check - Compile time check of DSL sentence completeness.

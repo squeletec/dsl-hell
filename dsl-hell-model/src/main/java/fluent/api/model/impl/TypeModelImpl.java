@@ -7,9 +7,13 @@ import fluent.api.model.VarModel;
 
 import javax.lang.model.type.TypeKind;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
 public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeModel {
     private final String packageName;
@@ -19,10 +23,12 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     private TypeModel rawType = this;
     private TypeModel componentType = this;
     private TypeModel superClass;
-    private List<VarModel> fields = new ArrayList<>();
+    private Map<String, VarModel> fields = new LinkedHashMap<>();
     private List<MethodModel> methods = new ArrayList<>();
     private List<TypeModel> interfaces = new ArrayList<>();
     private final List<TypeModel> nestedClasses = new ArrayList<>();
+    private boolean generate = true;
+
     public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind) {
         super(modifiers);
         this.packageName = packageName;
@@ -95,12 +101,12 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     }
 
     @Override
-    public List<VarModel> fields() {
+    public Map<String, VarModel> fields() {
         return fields;
     }
 
     @Override
-    public TypeModel fields(List<VarModel> fields) {
+    public TypeModel fields(Map<String, VarModel> fields) {
         this.fields = fields;
         return this;
     }
@@ -127,11 +133,27 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     }
 
     @Override
+    public boolean generate() {
+        return generate;
+    }
+
+    @Override
+    public TypeModel existing() {
+        generate = false;
+        return this;
+    }
+
+    @Override
     public TypeModel typeParameters(List<TypeModel> typeParameters) {
         if(typeParameters.isEmpty())
             return this;
         String collect = typeParameters.stream().map(TypeModel::fullName).collect(joining(", ", "<", ">"));
         return new TypeModelImpl(modifiers(), packageName, simpleName + collect, fullName + collect, kind, typeParameters).rawType(this);
+    }
+
+    @Override
+    public String toString() {
+        return fullName();
     }
 
 }
