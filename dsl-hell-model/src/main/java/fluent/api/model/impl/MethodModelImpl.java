@@ -5,18 +5,14 @@ import fluent.api.model.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.type.TypeKind.VOID;
 
 public class MethodModelImpl extends GenericModelImpl<MethodModel> implements MethodModel {
 
-    private static final TypeModel DEFAULT_TYPE = new TypeModelImpl(new ModifiersModelImpl(asList(PUBLIC, STATIC)), "", "void", "void", VOID);
+    private static final TypeModel DEFAULT_TYPE = new PrimitiveModelImpl("void", VOID);
     private TypeModel returnType = DEFAULT_TYPE;
     private final String name;
     private final List<VarModel> parameters;

@@ -26,7 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package fluent.dsl.model;
+package fluent.dsl.plugin;
 
 import fluent.api.model.GenericModel;
 import fluent.api.model.TypeModel;
@@ -60,7 +60,7 @@ public final class DslUtils {
         return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::fullName).collect(joining(", ", "<", ">"));
     }
 
-    public static void traverse(TypeModel t, List<TypeModel> out) {
+    public static void traverse(TypeModel<?> t, List<TypeModel> out) {
         if(t.isTypeVariable())
             out.add(t);
         else

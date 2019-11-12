@@ -28,73 +28,64 @@
  */
 package fluent.dsl.processor;
 
+import fluent.api.model.ModelFactory;
 import fluent.api.model.TypeModel;
 import fluent.api.model.impl.ModelFactoryImpl;
 import fluent.dsl.Dsl;
-import fluent.dsl.parser.BuilderParser;
-import fluent.dsl.parser.DslParser;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import java.util.HashSet;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import static fluent.dsl.generator.DslGenerator.generateFrom;
-import static java.util.Arrays.asList;
-import static javax.lang.model.element.ElementKind.*;
+import static fluent.dsl.generator.DslWriter.dslWriter;
+import static java.util.ServiceLoader.load;
 import static javax.tools.Diagnostic.Kind.WARNING;
 
 @SupportedAnnotationTypes("fluent.dsl.Dsl")
 public class DslAnnotationProcessor extends AbstractProcessor {
 
-    private final Set<ElementKind> modelTypes = new HashSet<>(asList(INTERFACE, CLASS, PARAMETER));
+    private final List<DslAnnotationProcessorPlugin> plugins = new ArrayList<>();
+
+    @Override
+    public synchronized void init(ProcessingEnvironment env) {
+        super.init(env);
+        ModelFactory modelFactory = new ModelFactoryImpl(env.getElementUtils(), env.getTypeUtils());
+        load(DslAnnotationProcessorPluginFactory.class, DslAnnotationProcessorPluginFactory.class.getClassLoader()).forEach(factory -> plugins.add(factory.createPlugin(modelFactory)));
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        ModelFactoryImpl modelFactory = new ModelFactoryImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
         for(Element element : roundEnv.getElementsAnnotatedWith(Dsl.class))
-            switch (element.getKind()) {
-                case INTERFACE:
-                case CLASS:
-                    processBinding(element, new DslParser(modelFactory));
-                    break;
-                case FIELD:
-                case PARAMETER:
-                    processBuilder(element, new BuilderParser(modelFactory));
-                    break;
-            }
+            processElement(element);
         return true;
     }
 
-    private void processBinding(Element element, DslParser factory) {
+    private void processElement(Element element) {
+        Dsl dsl = element.getAnnotation(Dsl.class);
         try {
-            TypeModel model = factory.parseModel(element);
-            generateFrom(
-                    processingEnv.getFiler().createSourceFile(model.superClass().rawType().fullName()).openWriter(),
-                    element.getAnnotation(Dsl.class).useVarargs(),
-                    generator -> generator.generateDsl(model)
-            );
+            for(DslAnnotationProcessorPlugin plugin : plugins)
+                if(plugin.isFor(element))
+                    applyPlugin(plugin, element, dsl);
         } catch (Throwable throwable) {
             processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);
         }
     }
 
-    private void processBuilder(Element element, BuilderParser parser) {
-        try {
-            TypeModel model = parser.parseModel(element);
-            generateFrom(
-                    processingEnv.getFiler().createSourceFile(model.rawType().fullName()).openWriter(),
-                    element.getAnnotation(Dsl.class).useVarargs(),
-                    generator -> generator.generateBuilder(model)
-            );
-        } catch (Throwable throwable) {
-            processingEnv.getMessager().printMessage(WARNING, "Unable to generate DSL for " + element + ": " + throwable, element);
+    private void applyPlugin(DslAnnotationProcessorPlugin plugin, Element element, Dsl dsl) {
+        TypeModel<?> model = plugin.process(element, dsl);
+        try(PrintWriter writer = new PrintWriter(processingEnv.getFiler().createSourceFile(model.rawType().fullName()).openWriter())) {
+            dslWriter(writer).writeFile(model);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
 
 }

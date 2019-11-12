@@ -14,7 +14,8 @@ public interface ModelFactory {
 
     VarModel parameter(TypeModel model, String parameterName);
 
-    TypeModel type(String packageName, String dslName);
+    InterfaceModel interfaceModel(String packageName, String dslName);
+    ClassModel classModel(String packageName, String dslName);
 
     MethodModel method(Collection<Modifier> modifiers, String method, List<VarModel> parameters);
 
@@ -35,4 +36,8 @@ public interface ModelFactory {
     MethodModel constructor(TypeModel builderModel, VarModel... parameters);
 
     VarModel constant(String name);
+
+    MethodModel defaultMethod(String name, List<VarModel> parameters);
+
+    MethodModel staticMethod(String name, List<VarModel> parameters);
 }

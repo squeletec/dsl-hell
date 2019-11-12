@@ -1,4 +1,4 @@
-package fluent.dsl.parser;
+package fluent.dsl.plugin;
 
 import fluent.api.model.StatementModel;
 import fluent.api.model.TypeModel;

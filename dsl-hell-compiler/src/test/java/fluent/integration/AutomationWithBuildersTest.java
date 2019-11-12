@@ -20,11 +20,7 @@ public class AutomationWithBuildersTest {
         Tester.injectsOrderWith(
                 orderId("").side(BUY).quantity(1).ric("A").price(0.00)
         ).into("");
-        Tester.mustSeeOrderWith()
-                .orderId("")
-                .and(
-                        side(BUY).ric("A").quantity(moreThan(0))
-                );
+        Tester.mustSeeOrderWith().orderId("").and(side(BUY).ric("A").quantity(moreThan(0)));
 
         Tester.injects(MessageWith.payload("").date(LocalDate.now()).build());
     }

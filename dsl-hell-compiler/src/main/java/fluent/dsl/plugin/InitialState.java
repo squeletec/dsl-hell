@@ -1,13 +1,12 @@
-package fluent.dsl.parser;
+package fluent.dsl.plugin;
 
 import fluent.api.model.*;
-import fluent.dsl.model.DslUtils;
 
 import javax.lang.model.element.Modifier;
 import java.util.*;
 
-import static fluent.dsl.model.DslUtils.capitalize;
-import static fluent.dsl.model.DslUtils.usedTypeParameters;
+import static fluent.dsl.plugin.DslUtils.capitalize;
+import static fluent.dsl.plugin.DslUtils.usedTypeParameters;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
@@ -47,14 +46,14 @@ public class InitialState implements State {
     }
 
     private class KeywordState implements State {
-        private final TypeModel typeModel;
+        private final TypeModel<?> typeModel;
         private final String methodName;
         private final Set<String> aliases;
         private final Modifier[] modifiers;
         private List<VarModel> parameters = new ArrayList<>();
         private final Map<String, MethodModel> methodSignatures;
 
-        private KeywordState(TypeModel typeModel, String methodName, Set<String> aliases, Modifier... modifiers) {
+        private KeywordState(TypeModel<?> typeModel, String methodName, Set<String> aliases, Modifier... modifiers) {
             this.typeModel = typeModel;
             this.methodName = methodName;
             this.aliases = aliases;
@@ -64,7 +63,7 @@ public class InitialState implements State {
         private MethodModel reduce(TypeModel returnType) {
             return methodSignatures.computeIfAbsent(signatureKey(methodName, parameters), key -> addMethod(key, returnType));
         }
-        private MethodModel addMethod(String key, TypeModel returnType) {
+        private MethodModel addMethod(String key, TypeModel<?> returnType) {
             List<TypeModel> typeParameters = this.typeModel.typeParameters();
             Map<String, TypeModel> map = new LinkedHashMap<>();
             typeParameters.forEach(p -> map.put(p.fullName(), p));
@@ -72,8 +71,20 @@ public class InitialState implements State {
             ArrayList<TypeModel> newParameters = new ArrayList<>(map.values());
             List<TypeModel> methodTypeParameters = newParameters.subList(typeParameters.size(), newParameters.size());
 
-            MethodModel method = factory.method(asList(modifiers), methodName, parameters).returnType(isNull(returnType) ? factory.type("", key).typeParameters(newParameters) : returnType).typeParameters(methodTypeParameters);
+
+            if(isNull(returnType)) {
+                returnType = factory.interfaceModel("", key).typeParameters(newParameters);
+                typeModel.types().add(returnType);
+            }
+            MethodModel method = factory.method(asList(modifiers), methodName, parameters).returnType(returnType).typeParameters(methodTypeParameters);
             typeModel.methods().add(method);
+            for(String alias : aliases) {
+                MethodModel aliasMethod = factory.defaultMethod(alias, parameters).returnType(returnType).typeParameters(methodTypeParameters);
+                aliasMethod.body().add(factory.statementModel(factory.parameter(typeModel, "this"), method));
+                typeModel.methods().add(aliasMethod);
+
+            }
+
             method.metadata().put("aliases", aliases);
             return method;
         }

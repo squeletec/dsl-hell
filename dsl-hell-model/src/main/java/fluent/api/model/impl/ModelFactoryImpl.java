@@ -11,8 +11,7 @@ import java.util.*;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.*;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static javax.lang.model.element.Modifier.STATIC;
+import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -33,14 +32,22 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     @Override
-    public TypeModel type(String packageName, String className) {
+    public InterfaceModel interfaceModel(String packageName, String className) {
         String fullName = packageName.isEmpty() ? className : packageName + "." + className;
-        return new TypeModelImpl(modifiers(PUBLIC, STATIC), packageName, className, fullName, DECLARED);
+        return new InterfaceModelImpl(modifiers(PUBLIC, STATIC), packageName, className, fullName, DECLARED);
+    }
+
+    @Override
+    public ClassModel classModel(String packageName, String className) {
+        String fullName = packageName.isEmpty() ? className : packageName + "." + className;
+        return new ClassModelImpl(modifiers(PUBLIC, STATIC), packageName, className, fullName, DECLARED);
     }
 
     @Override
     public MethodModel method(Collection<Modifier> modifiers, String method, List<VarModel> parameters) {
-        return new MethodModelImpl(modifiers(modifiers), method, parameters, false);
+        return modifiers.contains(STATIC)
+                ? new StaticMethodModelImpl(modifiers(modifiers), method, parameters)
+                : new MethodModelImpl(modifiers(modifiers), method, parameters, false);
     }
 
     @Override
@@ -65,7 +72,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
     @Override
     public TypeModel type(Element element) {
-        return visit(element.asType(), element).existing();
+        return visit(element.asType(), element);
     }
 
     @Override
@@ -76,24 +83,40 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     @Override
     public MethodModel method(ExecutableElement method) {
         TypeModel owner = type(method.getEnclosingElement());
-        return new MethodModelImpl(
-                modifiers(method.getModifiers()),
-                method.getSimpleName().toString(),
-                method.getParameters().stream().map(this::parameter).collect(toList()),
-                method.getKind() == ElementKind.CONSTRUCTOR
-        ).returnType(
-                method.getKind() == ElementKind.CONSTRUCTOR ? owner : visit(method.getReturnType())
-        ).owner(owner);
+        List<VarModel> parameters = method.getParameters().stream().map(this::parameter).collect(toList());
+        if(method.getKind() == ElementKind.CONSTRUCTOR) {
+            return new ConstructorModelImpl(parameters).returnType(owner).owner(owner);
+        }
+        String name = method.getSimpleName().toString();
+        TypeModel returnType = visit(method.getReturnType());
+        if(method.getModifiers().contains(DEFAULT)) {
+            return new DefaultMethodModelImpl(name, parameters).returnType(returnType).owner(owner);
+        }
+        ModifiersModel modifiers = modifiers(method.getModifiers());
+        if(method.getModifiers().contains(STATIC)) {
+            return new StaticMethodModelImpl(modifiers, name, parameters).returnType(returnType).owner(owner);
+        }
+        return new MethodModelImpl(modifiers, name, parameters, false).returnType(returnType).owner(owner);
     }
 
     @Override
     public MethodModel constructor(TypeModel type, VarModel... parameters) {
-        return new MethodModelImpl(modifiers(PUBLIC, STATIC), "<init>", asList(parameters), true).owner(type).returnType(type);
+        return new ConstructorModelImpl(asList(parameters)).owner(type).returnType(type);
     }
 
     @Override
     public VarModel constant(String name) {
-        return parameter(type("", name), name);
+        return parameter(classModel("", name), name);
+    }
+
+    @Override
+    public MethodModel defaultMethod(String name, List<VarModel> parameters) {
+        return new DefaultMethodModelImpl(name, parameters);
+    }
+
+    @Override
+    public MethodModel staticMethod(String name, List<VarModel> parameters) {
+        return new StaticMethodModelImpl(modifiers(PUBLIC, STATIC), name, parameters);
     }
 
 
@@ -108,7 +131,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     private TypeModel visitDefault(TypeMirror t) {
-        return new TypeModelImpl(modifiers(PUBLIC, STATIC), "", t.toString(), t.toString(), t.getKind());
+        return new PrimitiveModelImpl(t.toString(), t.getKind());
     }
 
     @Override
@@ -132,37 +155,48 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     @Override
     public TypeModel visitArray(ArrayType t, Element element) {
         TypeModel component = visit(t.getComponentType());
-        return new TypeModelImpl(
+        return new ArrayModelImpl(
                 modifiers(PUBLIC, STATIC),
                 component.packageName(),
                 component.simpleName() + "[]",
                 t.toString(),
-                t.getKind()
-        ).componentType(component);
+                t.getKind()).componentType(component);
     }
 
     @Override
-    public TypeModel visitDeclared(DeclaredType t, Element element) {
+    public TypeModel<?> visitDeclared(DeclaredType t, Element element) {
         List<TypeModel> s = new LazyList<>(() -> t.getTypeArguments().stream().map(this::visit).collect(toList()));
         String packageName = elements.getPackageOf(element).getQualifiedName().toString();
         List<MethodModel> m = new LazyList<>(() -> methodsIn(element.getEnclosedElements()).stream().map(this::method).collect(toList()));
         Map<String, VarModel> v = new LazyMap<>(() -> fieldsIn(element.getEnclosedElements()).stream().map(this::parameter).collect(toMap(VarModel::name, e -> e)));
+        ModifiersModel modifiers = modifiers(element.getModifiers());
 
-        return new TypeModelImpl(
-                modifiers(element.getModifiers()),
+        String fullName = t.toString();
+        String rawFullName = raw(fullName);
+        String simpleName = fullName.substring(rawFullName.lastIndexOf('.') + 1);
+        TypeKind kind = t.getKind();
+        return (element.getKind() == ElementKind.INTERFACE ? new InterfaceModelImpl(
+                modifiers,
                 packageName,
-                packageName.isEmpty() ? t.toString() :t.toString().substring(packageName.length() + 1),
-                t.toString(),
-                t.getKind(),
-                s
-        ).rawType(new TypeModelImpl(
-                modifiers(element.getModifiers()),
+                simpleName,
+                fullName,
+                kind,
+                s,
+                new InterfaceModelImpl(modifiers, packageName, raw(simpleName), rawFullName, kind)
+        )
+                : new ClassModelImpl(
+                modifiers,
                 packageName,
-                element.getSimpleName().toString(),
-                element.toString(),
-                t.getKind()
-        ).methods(m).fields(v)
-        ).methods(m).fields(v);
+                simpleName,
+                fullName,
+                kind,
+                s,
+                new ClassModelImpl(modifiers, packageName, raw(simpleName), rawFullName, kind)
+        )).methods(m).fields(v);
+    }
+
+    private String raw(String generic) {
+        return generic.split("<")[0];
     }
 
     @Override

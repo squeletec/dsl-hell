@@ -26,32 +26,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package fluent.dsl.parser;
+package fluent.dsl.plugin;
 
 import fluent.api.model.*;
 import fluent.dsl.Dsl;
-import fluent.dsl.model.DslUtils;
-
-import static fluent.dsl.model.DslUtils.*;
-import static fluent.dsl.parser.InitialState.start;
+import fluent.dsl.processor.DslAnnotationProcessorPlugin;
+import fluent.dsl.processor.DslAnnotationProcessorPluginFactory;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-
 import java.util.List;
 import java.util.function.Function;
 
+import static fluent.dsl.plugin.DslUtils.*;
+import static fluent.dsl.plugin.InitialState.start;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.element.ElementKind.FIELD;
+import static javax.lang.model.element.ElementKind.PARAMETER;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
-public class BuilderParser {
+public class BuilderParser implements DslAnnotationProcessorPlugin {
 
     private final ModelFactory factory;
 
@@ -59,23 +59,30 @@ public class BuilderParser {
         this.factory = factory;
     }
 
-    public TypeModel parseModel(Element element) {
-        TypeModel model = factory.parameter((VariableElement) element).type();
-        Dsl dsl = element.getAnnotation(Dsl.class);
+    @Override
+    public boolean isFor(Element element) {
+        return element.getKind() == PARAMETER || element.getKind() == FIELD;
+    }
+
+    @Override
+    public InterfaceModel process(Element element, Dsl dsl) {
+        TypeModel<?> model = factory.parameter((VariableElement) element).type();
 
         String packageName = override(dsl.packageName(), model.packageName());
         String dslName = override(dsl.className(), model.rawType().simpleName() + "With");
-        TypeModel dslModel = factory.type(packageName, dslName);
-        TypeModel builderModel = factory.type("", "Builder").typeParameters(model.typeParameters());
-        TypeModel builderImpl = factory.type("", "BuilderImpl").typeParameters(builderModel.typeParameters());
-        VarModel object = factory.parameter(model, "object");
-        builderImpl.interfaces().add(builderModel);
-        builderImpl.fields().put(object.name(), object);
+        InterfaceModel dslModel = factory.interfaceModel(packageName, dslName);
 
         Element typeElement = ((DeclaredType) element.asType()).asElement();
         List<ExecutableElement> constructors = constructorsIn(typeElement.getEnclosedElements());
         boolean hasSetters = methodsIn(typeElement.getEnclosedElements()).stream().anyMatch(DslUtils::isSetter);
         if(hasSetters || constructors.size() > 1) {
+            InterfaceModel builderModel = factory.interfaceModel("", "Builder").typeParameters(model.typeParameters());
+            ClassModel builderImpl = factory.classModel("", "BuilderImpl").typeParameters(builderModel.typeParameters());
+            VarModel object = factory.parameter(model, "object");
+            builderImpl.interfaces().add(builderModel);
+            builderImpl.fields().put(object.name(), object);
+            builderImpl.methods().add(factory.constructor(builderImpl, object));
+
             readConstructors(typeElement, start(factory, dslModel, PUBLIC, STATIC), c -> builderConstructor(c, builderImpl), builderModel);
             State state = start(factory, builderModel, PUBLIC);
             VarModel thisModel = factory.parameter(builderImpl, "this");
@@ -84,10 +91,12 @@ public class BuilderParser {
                     state.keyword(unCapitalize(method.getSimpleName().toString().substring(3)))
                             .parameter(factory.parameter(method.getParameters().get(0)))
                             .body(builderModel, factory.statementModel(object, factory.method(method)), factory.statementModel(thisModel, null));
-            dslModel.nestedClasses().add(builderImpl);
+            dslModel.types().add(builderModel);
+            dslModel.types().add(builderImpl);
             MethodModel buildMethod = factory.method("build").returnType(model);
             buildMethod.body().add(factory.statementModel(object, null));
             builderModel.methods().add(buildMethod);
+            builderImpl.methods().addAll(builderModel.methods());
         } else if(constructors.size() == 1 && constructors.get(0).getParameters().size() > 0) {
             readConstructors(typeElement, start(factory, dslModel, PUBLIC, STATIC), identity(), model);
         }
@@ -98,19 +107,26 @@ public class BuilderParser {
         return "new " + constructor.returnType().fullName() + "(" + constructor.parameters().stream().map(VarModel::name).collect(joining(", ")) + ")";
     }
 
-    public void readConstructors(Element element, State state, Function<MethodModel, MethodModel> constructorFactory, TypeModel returnType) {
+    private void readConstructors(Element element, State state, Function<MethodModel, MethodModel> constructorFactory, TypeModel returnType) {
         for(ExecutableElement constructor : constructorsIn(element.getEnclosedElements()))
             readMethodParameters(constructor, state, constructorFactory, returnType);
     }
 
-    public void readMethodParameters(ExecutableElement method, State state, Function<MethodModel, MethodModel> constructor, TypeModel returnType) {
+    private void readMethodParameters(ExecutableElement method, State state, Function<MethodModel, MethodModel> constructor, TypeModel returnType) {
         for (VariableElement parameter : method.getParameters())
             state = state.keyword(from(parameter)).parameter(factory.parameter(parameter));
         state.body(returnType, factory.statementModel(null, constructor.apply(factory.method(method))));
     }
 
-    public MethodModel builderConstructor(MethodModel constructor, TypeModel typeModel) {
+    private MethodModel builderConstructor(MethodModel constructor, TypeModel typeModel) {
         return factory.constructor(typeModel, factory.parameter(constructor.returnType(), constructorCall(constructor)));
     }
 
+    public static final class Factory implements DslAnnotationProcessorPluginFactory {
+
+        @Override
+        public DslAnnotationProcessorPlugin createPlugin(ModelFactory factory) {
+            return new BuilderParser(factory);
+        }
+    }
 }

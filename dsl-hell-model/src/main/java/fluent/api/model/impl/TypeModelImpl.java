@@ -1,9 +1,6 @@
 package fluent.api.model.impl;
 
-import fluent.api.model.MethodModel;
-import fluent.api.model.ModifiersModel;
-import fluent.api.model.TypeModel;
-import fluent.api.model.VarModel;
+import fluent.api.model.*;
 
 import javax.lang.model.type.TypeKind;
 import java.util.ArrayList;
@@ -11,23 +8,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 
-public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeModel {
+public abstract class TypeModelImpl<T extends TypeModel<T>> extends GenericModelImpl<T> implements TypeModel<T> {
     private final String packageName;
     private final String simpleName;
     private final String fullName;
     private final TypeKind kind;
-    private TypeModel rawType = this;
-    private TypeModel componentType = this;
-    private TypeModel superClass;
+    private final T rawType;
+    private TypeModel<?> componentType;
     private Map<String, VarModel> fields = new LinkedHashMap<>();
     private List<MethodModel> methods = new ArrayList<>();
-    private List<TypeModel> interfaces = new ArrayList<>();
+    private List<InterfaceModel> interfaces = new ArrayList<>();
     private final List<TypeModel> nestedClasses = new ArrayList<>();
-    private boolean generate = true;
 
     public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind) {
         super(modifiers);
@@ -35,12 +28,20 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
         this.simpleName = simpleName;
         this.fullName = fullName;
         this.kind = kind;
+        this.rawType = t();
     }
 
-    public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters) {
-        this(modifiers, packageName, simpleName, fullName, kind);
+    public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters, T rawType) {
+        super(modifiers);
+        this.packageName = packageName;
+        this.simpleName = simpleName;
+        this.fullName = fullName;
+        this.kind = kind;
+        this.rawType = rawType;
         this.typeParameters().addAll(typeParameters);
     }
+
+    protected abstract T t();
 
     @Override
     public String simpleName() {
@@ -68,25 +69,19 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     }
 
     @Override
-    public TypeModel rawType() {
+    public T rawType() {
         return rawType;
     }
 
     @Override
-    public TypeModel rawType(TypeModel rawType) {
-        this.rawType = rawType;
-        return this;
-    }
-
-    @Override
-    public TypeModel componentType() {
+    public TypeModel<?> componentType() {
         return componentType;
     }
 
     @Override
-    public TypeModel componentType(TypeModel componentType) {
+    public T componentType(TypeModel<?> componentType) {
         this.componentType = componentType;
-        return this;
+        return t();
     }
 
     @Override
@@ -95,9 +90,9 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     }
 
     @Override
-    public TypeModel methods(List<MethodModel> methods) {
+    public T methods(List<MethodModel> methods) {
         this.methods = methods;
-        return this;
+        return t();
     }
 
     @Override
@@ -106,50 +101,30 @@ public class TypeModelImpl extends GenericModelImpl<TypeModel> implements TypeMo
     }
 
     @Override
-    public TypeModel fields(Map<String, VarModel> fields) {
+    public T fields(Map<String, VarModel> fields) {
         this.fields = fields;
-        return this;
+        return t();
     }
 
     @Override
-    public TypeModel superClass() {
-        return superClass;
-    }
-
-    @Override
-    public List<TypeModel> interfaces() {
+    public List<InterfaceModel> interfaces() {
         return interfaces;
     }
 
     @Override
-    public TypeModel superClass(TypeModel superClass) {
-        this.superClass = superClass;
-        return this;
-    }
-
-    @Override
-    public List<TypeModel> nestedClasses() {
+    public List<TypeModel> types() {
         return nestedClasses;
     }
 
     @Override
-    public boolean generate() {
-        return generate;
-    }
-
-    @Override
-    public TypeModel existing() {
-        generate = false;
-        return this;
-    }
-
-    @Override
-    public TypeModel typeParameters(List<TypeModel> typeParameters) {
+    public T typeParameters(List<TypeModel> typeParameters) {
         if(typeParameters.isEmpty())
-            return this;
+            return t();
         String collect = typeParameters.stream().map(TypeModel::fullName).collect(joining(", ", "<", ">"));
-        return new TypeModelImpl(modifiers(), packageName, simpleName + collect, fullName + collect, kind, typeParameters).rawType(this);
+        return construct(collect, typeParameters);
     }
+
+    protected abstract T construct(String collect, List<TypeModel> typeParameters);
 
     @Override
     public String toString() {

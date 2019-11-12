@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2018, Ondrej Fischer
+ * Copyright (c) 2019, Ondrej Fischer
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,39 +26,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package fluent.api.model;
+package fluent.dsl.processor;
 
-import java.util.List;
-import java.util.Map;
+import fluent.api.model.ModelFactory;
 
-public interface TypeModel<T extends TypeModel<T>> extends GenericModel<T> {
+public interface DslAnnotationProcessorPluginFactory {
 
-    String simpleName();
-
-    String packageName();
-
-    String fullName();
-
-    boolean isArray();
-
-    boolean isTypeVariable();
-
-    T rawType();
-
-    TypeModel<?> componentType();
-
-    T componentType(TypeModel<?> componentType);
-
-    List<MethodModel> methods();
-
-    T methods(List<MethodModel> methods);
-
-    Map<String, VarModel> fields();
-
-    T fields(Map<String, VarModel> fields);
-
-    List<InterfaceModel> interfaces();
-
-    List<TypeModel> types();
+    DslAnnotationProcessorPlugin createPlugin(ModelFactory factory);
 
 }

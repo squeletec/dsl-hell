@@ -31,4 +31,8 @@ public class ModifiersModelImpl implements ModifiersModel {
         return modifiers.contains(DEFAULT);
     }
 
+    @Override
+    public Set<Modifier> keywords() {
+        return modifiers;
+    }
 }
