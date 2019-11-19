@@ -81,7 +81,13 @@ public class BuilderParser implements DslAnnotationProcessorPlugin {
             VarModel object = factory.parameter(model, "object");
             builderImpl.interfaces().add(builderModel);
             builderImpl.fields().put(object.name(), object);
-            builderImpl.methods().add(factory.constructor(builderImpl, object));
+            MethodModel constructor = factory.constructor(builderImpl, object);
+            constructor.body().add(new StatementModel() {
+                @Override public String toString() {
+                    return "this." + object.name() + " = " + object.name() + ";";
+                }
+            });
+            builderImpl.methods().add(constructor);
 
             readConstructors(typeElement, start(factory, dslModel, PUBLIC, STATIC), c -> builderConstructor(c, builderImpl), builderModel);
             State state = start(factory, builderModel, PUBLIC);

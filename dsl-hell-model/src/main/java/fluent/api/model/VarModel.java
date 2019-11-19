@@ -30,8 +30,11 @@ package fluent.api.model;
 
 public interface VarModel extends ElementModel {
 
-    TypeModel type();
+    TypeModel<?> type();
 
     String name();
 
+    String initializer();
+
+    VarModel initializer(String initializer);
 }

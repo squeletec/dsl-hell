@@ -92,7 +92,7 @@ public class DslWriter {
     public void writeInterface(InterfaceModel model) {
         println("interface %s%s {", model.simpleName(), interfaces("extends", model.interfaces()));
         DslWriter indent = indent();
-        //model.fields().values().forEach(indent::writeField);
+        model.fields().values().forEach(indent::writeField);
         model.methods().forEach(indent::writeInterfaceMethod);
         model.types().forEach(indent::writeType);
         println("}");
@@ -116,7 +116,7 @@ public class DslWriter {
     }
 
     public void writeField(VarModel model) {
-        println("%s%s %s;", modifiers(model), model.type().fullName(), model.name());
+        println("%s%s %s%s;", modifiers(model), model.type().fullName(), model.name(), isNull(model.initializer())? "" : " = " + model.initializer());
     }
 
     private String modifiers(ElementModel model) {
@@ -164,17 +164,13 @@ public class DslWriter {
     }
 
     public void writeConstructor(ConstructorModel model) {
-        println("public %s(%s) {", model.returnType().rawType().simpleName(), parameters(model));
+        println("%s %s(%s) {", modifiers(model), model.returnType().rawType().simpleName(), parameters(model));
         model.body().forEach(indent()::writeStatement);
         println("}");
     }
 
     public void writeStaticMethod(StaticMethodModel model) {
-        println("static %s%s %s(%s) {", typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
-        if(model.body().isEmpty() && model.returnType() instanceof InterfaceModel)
-            indent().writeAnonymousClass((InterfaceModel) model.returnType());
-        model.body().forEach(indent()::writeStatement);
-        println("}");
+        writeMethod("static", model);
     }
 
     public void writeAnonymousClass(InterfaceModel model) {
@@ -184,17 +180,20 @@ public class DslWriter {
     }
 
     public void writeAnonymousImplementation(MethodModel model) {
-        println("public %s%s %s(%s) {", typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
+        writeMethod("public", model);
+    }
+
+    public void writeDefaultMethod(DefaultMethodModel model) {
+        writeMethod("default", model);
+    }
+
+    private void writeMethod(String prefix, MethodModel model) {
+        println("%s %s%s %s(%s) {", prefix, typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
         if(model.body().isEmpty() && model.returnType() instanceof InterfaceModel)
             indent().writeAnonymousClass((InterfaceModel) model.returnType());
         model.body().forEach(indent()::writeStatement);
         println("}");
-    }
 
-    public void writeDefaultMethod(DefaultMethodModel model) {
-        println("default %s%s %s(%s) {", typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
-        model.body().forEach(indent()::writeStatement);
-        println("}");
     }
 
 }

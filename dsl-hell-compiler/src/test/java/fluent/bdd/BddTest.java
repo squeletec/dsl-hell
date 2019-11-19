@@ -10,7 +10,7 @@ public class BddTest implements BddAutomationDsl.Delegate {
     public void test() {
         Given("A").injects("").into("");
         When("A").injects("").into("");
-        //then(SUT).mustSeeOrderWith("A");
+        then(SUT).mustSeeOrderWith("A");
     }
 
     @Override

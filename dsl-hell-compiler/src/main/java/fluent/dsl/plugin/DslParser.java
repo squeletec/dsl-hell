@@ -43,7 +43,6 @@ import java.util.Set;
 
 import static fluent.dsl.plugin.DslUtils.*;
 import static fluent.dsl.plugin.InitialState.start;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toCollection;

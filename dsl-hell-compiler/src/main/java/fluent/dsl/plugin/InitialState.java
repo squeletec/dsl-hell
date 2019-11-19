@@ -12,11 +12,12 @@ import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 public class InitialState implements State {
     private final ModelFactory factory;
-    private final TypeModel rootTypeModel;
+    private final TypeModel<?> rootTypeModel;
     private final Modifier[] initialModifiers;
 
     private InitialState(ModelFactory factory, TypeModel rootTypeModel, Modifier[] initialModifiers) {
@@ -99,7 +100,14 @@ public class InitialState implements State {
             return this;
         }
         @Override public State constant(VarModel constant) {
-            rootTypeModel.fields().putIfAbsent(constant.name(), constant);
+            rootTypeModel.fields().computeIfAbsent(constant.name(), name -> {
+                MethodModel constructor = factory.constructor(constant.type());
+                constructor.modifiers().keywords().clear();
+                constructor.modifiers().keywords().add(PRIVATE);
+                constant.type().methods().add(constructor);
+                rootTypeModel.types().add(constant.type());
+                return constant.initializer("new " + constant.type().fullName() + "()");
+            });
             return parameter(constant);
         }
         @Override public void body(TypeModel returnType, StatementModel... statement) {

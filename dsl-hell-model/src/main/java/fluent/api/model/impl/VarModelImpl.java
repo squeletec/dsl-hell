@@ -8,6 +8,7 @@ public class VarModelImpl extends ElementModelImpl implements VarModel {
 
     private final TypeModel type;
     private final String name;
+    private String initializer;
 
     public VarModelImpl(ModifiersModel modifiers, TypeModel type, String name) {
         super(modifiers);
@@ -23,6 +24,17 @@ public class VarModelImpl extends ElementModelImpl implements VarModel {
     @Override
     public String name() {
         return name;
+    }
+
+    @Override
+    public String initializer() {
+        return initializer;
+    }
+
+    @Override
+    public VarModel initializer(String initializer) {
+        this.initializer = initializer;
+        return this;
     }
 
     @Override
