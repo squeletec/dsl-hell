@@ -1,6 +1,5 @@
 package fluent.api.model.impl;
 
-import fluent.api.model.ModifiersModel;
 import fluent.api.model.PrimitiveModel;
 import fluent.api.model.TypeModel;
 
@@ -22,7 +21,7 @@ public class PrimitiveModelImpl extends TypeModelImpl<PrimitiveModel> implements
     }
 
     @Override
-    protected PrimitiveModel construct(String collect, List<TypeModel> typeParameters) {
+    protected PrimitiveModel construct(String collect, List<TypeModel<?>> typeParameters) {
         return this;
     }
 

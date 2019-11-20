@@ -13,7 +13,7 @@ public class ArrayModelImpl extends TypeModelImpl<ArrayModel> implements ArrayMo
         super(modifiers, packageName, simpleName, fullName, kind);
     }
 
-    public ArrayModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters, ArrayModel rawType) {
+    public ArrayModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel<?>> typeParameters, ArrayModel rawType) {
         super(modifiers, packageName, simpleName, fullName, kind, typeParameters, rawType);
     }
 
@@ -23,7 +23,7 @@ public class ArrayModelImpl extends TypeModelImpl<ArrayModel> implements ArrayMo
     }
 
     @Override
-    protected ArrayModel construct(String collect, List<TypeModel> typeParameters) {
+    protected ArrayModel construct(String collect, List<TypeModel<?>> typeParameters) {
         return new ArrayModelImpl(modifiers(), packageName(), simpleName(), fullName(), TypeKind.ARRAY, typeParameters, this);
     }
 

@@ -16,7 +16,7 @@ import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
-public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, Element> {
+public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel<?>, Element> {
 
     private final Elements elements;
     private final Types types;
@@ -71,8 +71,13 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     @Override
-    public TypeModel type(Element element) {
+    public TypeModel<?> type(Element element) {
         return visit(element.asType(), element);
+    }
+
+    @Override
+    public TypeModel<?> type(TypeMirror typeMirror) {
+        return visit(typeMirror);
     }
 
     @Override
@@ -100,7 +105,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     @Override
-    public MethodModel constructor(TypeModel type, VarModel... parameters) {
+    public MethodModel constructor(TypeModel<?> type, VarModel... parameters) {
         return new ConstructorModelImpl(asList(parameters)).owner(type).returnType(type);
     }
 
@@ -121,26 +126,26 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
 
     @Override
-    public TypeModel visit(TypeMirror t, Element typeElement) {
+    public TypeModel<?> visit(TypeMirror t, Element typeElement) {
         return t.accept(this, typeElement);
     }
 
     @Override
-    public TypeModel visit(TypeMirror t) {
+    public TypeModel<?> visit(TypeMirror t) {
         return visit(t, types.asElement(t));
     }
 
-    private TypeModel visitDefault(TypeMirror t) {
+    private TypeModel<?> visitDefault(TypeMirror t) {
         return new PrimitiveModelImpl(t.toString(), t.getKind());
     }
 
     @Override
-    public TypeModel visitPrimitive(PrimitiveType t, Element element) {
+    public TypeModel<?> visitPrimitive(PrimitiveType t, Element element) {
         return visitDefault(t);
     }
 
     @Override
-    public TypeModel visitNull(NullType t, Element typeElement) {
+    public TypeModel<?> visitNull(NullType t, Element typeElement) {
         return null;
     }
 
@@ -153,7 +158,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     @Override
-    public TypeModel visitArray(ArrayType t, Element element) {
+    public TypeModel<?> visitArray(ArrayType t, Element element) {
         TypeModel component = visit(t.getComponentType());
         return new ArrayModelImpl(
                 modifiers(PUBLIC, STATIC),
@@ -165,7 +170,7 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
 
     @Override
     public TypeModel<?> visitDeclared(DeclaredType t, Element element) {
-        List<TypeModel> s = new LazyList<>(() -> t.getTypeArguments().stream().map(this::visit).collect(toList()));
+        List<TypeModel<?>> s = new LazyList<>(() -> t.getTypeArguments().stream().map(this::visit).collect(toList()));
         String packageName = elements.getPackageOf(element).getQualifiedName().toString();
         List<MethodModel> m = new LazyList<>(() -> methodsIn(element.getEnclosedElements()).stream().map(this::method).collect(toList()));
         Map<String, VarModel> v = new LazyMap<>(() -> fieldsIn(element.getEnclosedElements()).stream().map(this::parameter).collect(toMap(VarModel::name, e -> e)));
@@ -200,29 +205,29 @@ public class ModelFactoryImpl implements ModelFactory, TypeVisitor<TypeModel, El
     }
 
     @Override
-    public TypeModel visitError(ErrorType t, Element typeElement) {
+    public TypeModel<?> visitError(ErrorType t, Element typeElement) {
         return null;
     }
 
     @Override
-    public TypeModel visitTypeVariable(TypeVariable t, Element typeElement) {
+    public TypeModel<?> visitTypeVariable(TypeVariable t, Element typeElement) {
         return visitDefault(t);
     }
 
     @Override
-    public TypeModel visitWildcard(WildcardType t, Element typeElement) {
+    public TypeModel<?> visitWildcard(WildcardType t, Element typeElement) {
         if(t.getSuperBound() != null)
             return visit(t.getSuperBound());
         return visit(t.getExtendsBound());
     }
 
     @Override
-    public TypeModel visitExecutable(ExecutableType t, Element typeElement) {
+    public TypeModel<?> visitExecutable(ExecutableType t, Element typeElement) {
         return null;
     }
 
     @Override
-    public TypeModel visitNoType(NoType t, Element typeElement) {
+    public TypeModel<?> visitNoType(NoType t, Element typeElement) {
         return visitDefault(t);
     }
 

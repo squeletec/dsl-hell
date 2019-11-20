@@ -15,7 +15,7 @@ public class ClassModelImpl extends TypeModelImpl<ClassModel> implements ClassMo
         super(modifiers, packageName, simpleName, fullName, kind);
     }
 
-    public ClassModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters, ClassModel rawType) {
+    public ClassModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel<?>> typeParameters, ClassModel rawType) {
         super(modifiers, packageName, simpleName, fullName, kind, typeParameters, rawType);
     }
 
@@ -25,7 +25,7 @@ public class ClassModelImpl extends TypeModelImpl<ClassModel> implements ClassMo
     }
 
     @Override
-    protected ClassModel construct(String collect, List<TypeModel> typeParameters) {
+    protected ClassModel construct(String collect, List<TypeModel<?>> typeParameters) {
         return new ClassModelImpl(modifiers(), packageName(), simpleName() + collect, fullName() + collect, TypeKind.DECLARED, typeParameters, this);
     }
 

@@ -4,6 +4,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import java.util.Collection;
 import java.util.List;
 
@@ -27,13 +28,15 @@ public interface ModelFactory {
 
     StatementModel statementModel(VarModel impl, MethodModel body);
 
-    TypeModel type(Element element);
+    TypeModel<?> type(Element element);
+
+    TypeModel<?> type(TypeMirror typeMirror);
 
     VarModel parameter(VariableElement parameterModel);
 
     MethodModel method(ExecutableElement method);
 
-    MethodModel constructor(TypeModel builderModel, VarModel... parameters);
+    MethodModel constructor(TypeModel<?> builderModel, VarModel... parameters);
 
     VarModel constant(String name);
 

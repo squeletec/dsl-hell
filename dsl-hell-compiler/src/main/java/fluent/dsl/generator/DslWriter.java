@@ -193,7 +193,6 @@ public class DslWriter {
             indent().writeAnonymousClass((InterfaceModel) model.returnType());
         model.body().forEach(indent()::writeStatement);
         println("}");
-
     }
 
 }

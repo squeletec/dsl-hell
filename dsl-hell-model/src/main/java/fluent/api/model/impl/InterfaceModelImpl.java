@@ -13,7 +13,7 @@ public class InterfaceModelImpl extends TypeModelImpl<InterfaceModel> implements
         super(modifiers, packageName, simpleName, fullName, kind);
     }
 
-    public InterfaceModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters, InterfaceModel rawType) {
+    public InterfaceModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel<?>> typeParameters, InterfaceModel rawType) {
         super(modifiers, packageName, simpleName, fullName, kind, typeParameters, rawType);
     }
 
@@ -23,7 +23,7 @@ public class InterfaceModelImpl extends TypeModelImpl<InterfaceModel> implements
     }
 
     @Override
-    protected InterfaceModel construct(String collect, List<TypeModel> typeParameters) {
+    protected InterfaceModel construct(String collect, List<TypeModel<?>> typeParameters) {
         return new InterfaceModelImpl(modifiers(), packageName(), simpleName() + collect, fullName() + collect, TypeKind.DECLARED, typeParameters, this);
     }
 

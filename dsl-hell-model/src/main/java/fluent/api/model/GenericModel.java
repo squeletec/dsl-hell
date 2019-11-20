@@ -32,8 +32,8 @@ import java.util.List;
 
 public interface GenericModel<T> extends ElementModel {
 
-    List<TypeModel> typeParameters();
+    List<TypeModel<?>> typeParameters();
 
-    T typeParameters(List<TypeModel> typeParameters);
+    T typeParameters(List<TypeModel<?>> typeParameters);
 
 }

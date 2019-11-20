@@ -18,6 +18,7 @@
         <module>dsl-hell-compiler</module>
         <module>dsl-hell-model</module>
         <module>dsl-hell-plugin</module>
+        <module>dsl-hell-check-plugin</module>
     </modules>
 
     <url>https://github.com/c0stra/fluent-api-generator/wiki/dsl-hell</url>

@@ -65,12 +65,12 @@ public class InitialState implements State {
             return methodSignatures.computeIfAbsent(signatureKey(methodName, parameters), key -> addMethod(key, returnType));
         }
         private MethodModel addMethod(String key, TypeModel<?> returnType) {
-            List<TypeModel> typeParameters = this.typeModel.typeParameters();
-            Map<String, TypeModel> map = new LinkedHashMap<>();
+            List<TypeModel<?>> typeParameters = this.typeModel.typeParameters();
+            Map<String, TypeModel<?>> map = new LinkedHashMap<>();
             typeParameters.forEach(p -> map.put(p.fullName(), p));
             usedTypeParameters(parameters).forEach(t -> map.put(t.fullName(), t));
-            ArrayList<TypeModel> newParameters = new ArrayList<>(map.values());
-            List<TypeModel> methodTypeParameters = newParameters.subList(typeParameters.size(), newParameters.size());
+            ArrayList<TypeModel<?>> newParameters = new ArrayList<>(map.values());
+            List<TypeModel<?>> methodTypeParameters = newParameters.subList(typeParameters.size(), newParameters.size());
 
 
             if(isNull(returnType)) {

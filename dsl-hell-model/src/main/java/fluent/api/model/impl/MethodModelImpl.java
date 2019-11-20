@@ -75,7 +75,7 @@ public class MethodModelImpl extends GenericModelImpl<MethodModel> implements Me
     }
 
     @Override
-    public MethodModel typeParameters(List<TypeModel> typeParameters) {
+    public MethodModel typeParameters(List<TypeModel<?>> typeParameters) {
         typeParameters().addAll(typeParameters);
         return this;
     }

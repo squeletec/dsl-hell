@@ -31,7 +31,7 @@ public abstract class TypeModelImpl<T extends TypeModel<T>> extends GenericModel
         this.rawType = t();
     }
 
-    public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel> typeParameters, T rawType) {
+    public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind, List<TypeModel<?>> typeParameters, T rawType) {
         super(modifiers);
         this.packageName = packageName;
         this.simpleName = simpleName;
@@ -117,14 +117,14 @@ public abstract class TypeModelImpl<T extends TypeModel<T>> extends GenericModel
     }
 
     @Override
-    public T typeParameters(List<TypeModel> typeParameters) {
+    public T typeParameters(List<TypeModel<?>> typeParameters) {
         if(typeParameters.isEmpty())
             return t();
         String collect = typeParameters.stream().map(TypeModel::fullName).collect(joining(", ", "<", ">"));
         return construct(collect, typeParameters);
     }
 
-    protected abstract T construct(String collect, List<TypeModel> typeParameters);
+    protected abstract T construct(String collect, List<TypeModel<?>> typeParameters);
 
     @Override
     public String toString() {

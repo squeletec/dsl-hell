@@ -39,6 +39,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -58,7 +59,11 @@ public class DslAnnotationProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment env) {
         super.init(env);
         ModelFactory modelFactory = new ModelFactoryImpl(env.getElementUtils(), env.getTypeUtils());
-        load(DslAnnotationProcessorPluginFactory.class, DslAnnotationProcessorPluginFactory.class.getClassLoader()).forEach(factory -> plugins.add(factory.createPlugin(modelFactory)));
+        try {
+            load(DslAnnotationProcessorPluginFactory.class, DslAnnotationProcessorPluginFactory.class.getClassLoader()).forEach(factory -> plugins.add(factory.createPlugin(modelFactory)));
+        } catch (RuntimeException | Error e) {
+            env.getMessager().printMessage(WARNING, "Unable to load plugin: " + e);
+        }
     }
 
     @Override
