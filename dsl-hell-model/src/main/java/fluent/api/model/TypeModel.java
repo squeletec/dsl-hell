@@ -59,6 +59,8 @@ public interface TypeModel<T extends TypeModel<T>> extends GenericModel<T> {
 
     List<InterfaceModel> interfaces();
 
-    List<TypeModel> types();
+    List<TypeModel<?>> types();
+
+    boolean isPrimitive();
 
 }

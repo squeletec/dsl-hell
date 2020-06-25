@@ -20,7 +20,7 @@ public abstract class TypeModelImpl<T extends TypeModel<T>> extends GenericModel
     private Map<String, VarModel> fields = new LinkedHashMap<>();
     private List<MethodModel> methods = new ArrayList<>();
     private List<InterfaceModel> interfaces = new ArrayList<>();
-    private final List<TypeModel> nestedClasses = new ArrayList<>();
+    private final List<TypeModel<?>> nestedClasses = new ArrayList<>();
 
     public TypeModelImpl(ModifiersModel modifiers, String packageName, String simpleName, String fullName, TypeKind kind) {
         super(modifiers);
@@ -112,8 +112,13 @@ public abstract class TypeModelImpl<T extends TypeModel<T>> extends GenericModel
     }
 
     @Override
-    public List<TypeModel> types() {
+    public List<TypeModel<?>> types() {
         return nestedClasses;
+    }
+
+    @Override
+    public boolean isPrimitive() {
+        return kind.isPrimitive();
     }
 
     @Override

@@ -10,16 +10,23 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static fluent.dsl.plugin.DslUtils.isGetter;
 import static fluent.dsl.plugin.DslUtils.override;
+import static java.util.Arrays.asList;
 
 public class CheckDslPlugin implements DslAnnotationProcessorPlugin {
     private final ModelFactory factory;
 
     public CheckDslPlugin(ModelFactory factory) {
         this.factory = factory;
+        boxedTypes.put("int", factory.classModel("java.lang", "Integer"));
+        boxedTypes.put("boolean", factory.classModel("java.lang", "Boolean"));
+        boxedTypes.put("long", factory.classModel("java.lang", "Long"));
     }
 
     @Override
@@ -34,6 +41,7 @@ public class CheckDslPlugin implements DslAnnotationProcessorPlugin {
         String packageName = override(dsl.packageName(), typeModel.packageName());
         String className = override(dsl.className(), typeModel.rawType().simpleName() + "With");
         ClassModel fluentCheck = factory.classModel(packageName, className);
+        //fluentCheck.superClass(factory.classModel("fluent.validation", "AbstractCheckDsl").typeParameters(asList(fluentCheck, typeModel)));
         for(MethodModel method : typeModel.methods())
             if(isGetter(method))
                 processGetter(fluentCheck, method);
@@ -46,9 +54,15 @@ public class CheckDslPlugin implements DslAnnotationProcessorPlugin {
 
     private void processGetter(ClassModel fluentCheck, MethodModel method) {
         String name = method.name();
-        fluentCheck.methods().add(factory.method(name, factory.parameter(method.returnType(), "expectedValue")));
-        fluentCheck.methods().add(factory.method(name));
+        //fluentCheck.methods().add(factory.method(name, factory.parameter(method.returnType(), "expectedValue")).returnType(fluentCheck));
+        //fluentCheck.methods().add(factory.method(name, factory.parameter(factory.interfaceModel("fluent.validation", "Check<? super " + boxed(method.returnType()).fullName() + ">"), "expectation")).returnType(fluentCheck));
     }
+
+    private TypeModel<?> boxed(TypeModel<?> type) {
+        return boxedTypes.getOrDefault(type.fullName(), type);
+    }
+
+    private final Map<String, TypeModel<?>> boxedTypes = new HashMap<>();
 
     public static class Factory implements DslAnnotationProcessorPluginFactory {
 

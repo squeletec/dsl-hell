@@ -32,16 +32,20 @@ import fluent.api.model.*;
 
 import javax.lang.model.element.Modifier;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 
 public class DslWriter {
 
     private static final String tab = "\t";
+    private static final Set<String> forbidden = new HashSet<>(asList("toString()", "hashCode()", "getClass()"));
 
     private final PrintWriter source;
     private final String prefix;
@@ -82,7 +86,7 @@ public class DslWriter {
         writeType(model);
     }
 
-    public void writeType(TypeModel model) {
+    public void writeType(TypeModel<?> model) {
         if(model instanceof InterfaceModel)
             writeInterface((InterfaceModel) model);
         if(model instanceof ClassModel)
@@ -112,7 +116,7 @@ public class DslWriter {
     }
 
     public String extend(ClassModel superClass) {
-        return isNull(superClass) ? "" : superClass.fullName();
+        return isNull(superClass) ? "" : " extends " + superClass.fullName();
     }
 
     public void writeField(VarModel model) {
@@ -184,7 +188,8 @@ public class DslWriter {
     }
 
     public void writeDefaultMethod(DefaultMethodModel model) {
-        writeMethod("default", model);
+        if(!forbidden.contains(model.toString()))
+            writeMethod("default", model);
     }
 
     private void writeMethod(String prefix, MethodModel model) {

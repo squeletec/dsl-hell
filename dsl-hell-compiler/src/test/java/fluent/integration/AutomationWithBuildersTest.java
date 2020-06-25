@@ -23,6 +23,8 @@ public class AutomationWithBuildersTest {
         Tester.mustSeeOrderWith().orderId("").and(side(BUY).ric("A").quantity(moreThan(0)));
 
         Tester.injects(MessageWith.payload("").date(LocalDate.now()).build());
+
+        Tester.injectsOrderWith(null).into("");
     }
 
 }
