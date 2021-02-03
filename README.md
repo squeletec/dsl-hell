@@ -28,7 +28,7 @@ Simples (but not exactly correct) is adding it as standard dependency:
 ```xml
 <dependency>
     <groupId>foundation.fluent.api</groupId>
-    <artifactId>dsl-hell-annotations</artifactId>
+    <artifactId>dsl-hell-compiler</artifactId>
     <version>${dsl-hell.version}</version>
 </dependency>
 ```
@@ -68,7 +68,7 @@ public interface Automation {
 }
 ```
 
-DSL keywords are prepared. Now we caan define our binding of functional methods to our DSL.
+DSL keywords are prepared. Now we can define our binding of functional methods to our DSL.
 
 ### 3. Bind your methods via DSL
 
@@ -91,7 +91,7 @@ public interface Automation {
 
 }
 ```
-Now recompile zour code in order to generate the code, e.g. by `mvn compile`.
+Now recompile your code in order to generate the DSL code, e.g. by `mvn compile`.
 We are done. Now there is new interface `AutomationDsl` generated with factory method accepting instance of this our
 interface, and providing the DSL we described above.
 
@@ -144,8 +144,8 @@ normally written, when using fluent interface aka Java DSL.
 So one should focus still only on the functionality, one wants to develop / automate using standard practises and as
 simple API as needed, and with minimal effort get nice readable fluent interface / DSL on top of it.
 
-With `dsl-hell` it's not any more needed to develop and maintain whole grammar with all branching and chaining in all
-the interfaces, that make up a fluent interface, but instead only describe how should our DSL sentences look, and how
+With `dsl-hell` it's not needed to develop and maintain whole grammar with all branching and chaining in all
+the interfaces anymore, that make up a fluent interface, but instead only describe how should our DSL sentences look, and how
 are they bound to the simple API.
 
 Example of full DSL:
@@ -161,7 +161,7 @@ TBD
 ### 1. Possible constructs
 #### 1.1 Keyword chain
 Keywords are defined by annotations which themselves are annotated with annotation `@Dsl` (or have this annotation in
-their hierarchy) of outer classes or owning packages.
+their hierarchy of outer classes or owning packages).
 
 E.g.
 ```java
@@ -186,7 +186,7 @@ dsl.message().injects("Ahoj");
 ```
 
 Method names created based on keyword annotations will be named exactly the same way, as the annotation, including
-case. That on one hand breaks Java conventions for annotation naming (they normally start with capital letter), but
+case. That on one hand breaks Java conventions for annotation naming (they normally start with a capital letter), but
 on the other hand gives the flexibility to control case of methods in the chain (e.g. first method start with capital,
 and others in the chain don't).
 
@@ -197,20 +197,20 @@ Still using the name of the annotation makes sure, tht method name will be prope
 In fact the purpose of the DSL is mostly to collect parameters for use in the target (binding) method. The simple API
 method for which a DSL sentence gets generated, contains keywords as well as the parameters. The logic is simple:
 
-Every parameter in the API will become parameter of the predecessor keyword:
+Every parameter in the API will become a parameter of the predecessor keyword:
 ```java
 void action(@injects @message String message);
 ```
-will generate chain of unparametrized method `injects()` and parametrized method `message(String message)`.
+will generate a chain of unparametrized method `injects()` and parametrized method `message(String message)`.
 
 In other words parameters are added to the last keyword, until another keyword appears. So we can follow single
-parameter keywords DSL, if we introduce keyword before every parameter:
+parameter keywords DSL, if we introduce a keyword before every parameter:
 ```java
 void action(@entersUsername @Strign username, @andPassword String password, @at String loginPage);
 ```
 that will end up with `entersUsername(String username)`, `andPassword(String password)` and `at(String loginPage)`.
 
-However we don't need to have only 1 parameter methods in the DSL. Following code:
+However, we don't need to have only 1 parameter methods in the DSL. Following code:
 ```java
 void action(@schedule Runnable task, @after long value, TimeUnit unit);
 ```
@@ -223,7 +223,7 @@ App.schedule(task).after(10, MINUTES);
 #### 1.3 Common DSL prefix
 Keywords do not need to be used only at method parameters, but they might be used with different meaning also elsewhere.
 
-When used directly on the binding class / interface, they will cause to generate "common prefix" of keyword method:
+When used directly on the binding class / interface, they will cause generating "common prefix" of keyword method:
 
 ```java
 @Dsl
@@ -234,7 +234,7 @@ interface RestAPIAutomation {
 }
 ```
 
-Now all our calls will start with common prefix:
+Now all our calls will start with a common prefix:
 ```java
 Tester.withRestAPI().call().serviceA(body).andValidate(nonNull());
 Tester.withRestAPI().call().serviceB(body).andValidate(nonNull());
@@ -325,7 +325,7 @@ anonymous implementation. E.g. DSL should be implemented directly by some test c
 
 #### 2.4 Syntactic sugar constants
 
-It could be usefull for various reasons to use additional "artificial" parameters as syntactic sugar. It especially
+It could be useful for various reasons to use additional "artificial" parameters as syntactic sugar. It especially
 helps when trying to design decomposed DSL, which should at some point be merged, or other tricks, but it might
 also be just matter of preference for readability.
 
@@ -361,7 +361,7 @@ multiparametrized keywords.
 
 ### 3. Customizations of the DSL
 
-Customization of the DSL is possible via couple the attributes of the `@Dsl` annotation. Let's summarize them in
+Customization of the DSL is possible via attributes of the `@Dsl` annotation. Let's summarize them in
 following table:
 
 | Attribute        | Description                                                            | Default value / behavior |
@@ -409,7 +409,7 @@ Simple API method has all parameters available to the compiler at the same time,
 Although this example is not very meaningful, it demonstrates a situation we may end up. First method `queueAt(String)`
 is not able to infer `T`. If it was generic already, it would degrade `T` to `Object`. We want to have the DSL smarter.
 
-The generator is able to identify, which type parameters are needed ad which moment in the chaining, so it can make
+The generator is able to identify, which type parameters are needed at which moment in the chaining, so it can make
 the intermediate interfaces generic only when needed, and postpone the inference up to methods, where it's known.
 It is done partially.
 
@@ -469,7 +469,7 @@ Note extra spaces making the Java statement look a bit like a sentence with plac
 ### 6. Combination with other DSL constructs
 
 Fluent DSL generated using this tool doesn't support to incorporate fluent builders or other extensions to it.
-However it is possible to combine it with other DSL constructs.
+However, it is possible to combine it with other DSL constructs.
 
 #### 6.1 Fluent builders
 
@@ -477,7 +477,7 @@ However it is possible to combine it with other DSL constructs.
 
 
 
-## Usefull links
+## Useful links
 
 https://github.com/c0stra/fluent-api-end-check - Compile time check of DSL sentence completeness.
 
