@@ -1,5 +1,6 @@
 # DSL HELL
 ![Released version](https://img.shields.io/maven-central/v/foundation.fluent.api/dsl-hell.svg)
+[![Build Status](https://travis-ci.org/c0stra/dsl-hell.svg?branch=master)](https://travis-ci.org/c0stra/dsl-hell)
 
 Did you need higher/business level description, that BDD/Cucumber allows, but still benefit from Java general programming
 language flexibility, and you didn't want to end up maintaining complex Java DSL (fluent interface) class / interface
