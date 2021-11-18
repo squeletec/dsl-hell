@@ -181,7 +181,7 @@ public class DslWriter {
     }
 
     public void writeStaticMethod(StaticMethodModel model) {
-        writeMethod("static", model);
+        writeMethod("public static", model);
     }
 
     public void writeAnonymousClass(InterfaceModel model) {

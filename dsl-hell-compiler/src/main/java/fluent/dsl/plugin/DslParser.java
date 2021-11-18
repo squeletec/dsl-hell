@@ -34,15 +34,13 @@ import fluent.dsl.Dsl;
 import fluent.dsl.processor.DslAnnotationProcessorPlugin;
 import fluent.dsl.processor.DslAnnotationProcessorPluginFactory;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static fluent.dsl.plugin.DslUtils.*;
 import static fluent.dsl.plugin.InitialState.start;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toCollection;
@@ -66,23 +64,37 @@ public class DslParser implements DslAnnotationProcessorPlugin {
     @Override
     public InterfaceModel process(Element element, Dsl dsl) {
         TypeModel<?> model = factory.type(element);
+        boolean hasOnlyStaticMethods = methodsIn(element.getEnclosedElements()).stream().allMatch(method -> method.getModifiers().contains(Modifier.STATIC));
 
         String packageName = override(dsl.packageName(), model.packageName());
         String dslName = override(dsl.className(), model.rawType().simpleName() + "Dsl");
 
         VarModel source = factory.parameter(model, dsl.parameterName());
         InterfaceModel dslType = factory.interfaceModel(packageName, dslName).typeParameters(model.typeParameters());
-        MethodModel factoryMethod = factory.staticMethod(dsl.factoryMethod(), singletonList(source)).typeParameters(model.typeParameters()).returnType(dslType);
 
         parseMethods(element, start(factory, dslType, PUBLIC), source);
         InterfaceModel delegate = factory.interfaceModel("", "Delegate").typeParameters(model.typeParameters());
         delegate.interfaces().add(dslType);
-        delegate.methods().add(factory.method(dsl.delegateMethod()).returnType(dslType));
         dslType.methods().forEach(m -> {
             MethodModel model1 = factory.defaultMethod(m.name(), m.parameters()).returnType(m.returnType()).typeParameters(m.typeParameters());
             model1.body().add(factory.statementModel(factory.parameter(dslType, dsl.delegateMethod() + "()"), m));
             delegate.methods().add(model1);
         });
+        MethodModel factoryMethod = factory.staticMethod(dsl.factoryMethod(), hasOnlyStaticMethods ? emptyList() : singletonList(source)).typeParameters(model.typeParameters()).returnType(dslType).owner(dslType);
+        if(hasOnlyStaticMethods) {
+            MethodModel delegateMethod = factory.defaultMethod(dsl.delegateMethod(), emptyList()).returnType(dslType);
+            delegateMethod.body().add(factory.statementModel(null, factoryMethod));
+            delegate.methods().add(delegateMethod);
+            ClassModel staticEntryModel = factory.classModel("", "Static");
+            dslType.methods().forEach(m -> {
+                MethodModel entry = factory.staticMethod(m.name(), m.parameters()).returnType(m.returnType()).typeParameters(m.typeParameters());
+                entry.body().add(factory.statementModel(factory.parameter(dslType, factoryMethod.toString()), m));
+                staticEntryModel.methods().add(entry);
+            });
+            dslType.types().add(staticEntryModel);
+        } else {
+            delegate.methods().add(factory.method(dsl.delegateMethod()).returnType(dslType));
+        }
         dslType.methods().add(factoryMethod);
         dslType.types().add(delegate);
         return dslType;
