@@ -4,7 +4,7 @@
 
     <groupId>foundation.fluent.api</groupId>
     <artifactId>dsl-hell</artifactId>
-    <version>1.9-SNAPSHOT</version>
+    <version>1.9</version>
     <packaging>pom</packaging>
     <name>Java DSL generator hell</name>
 
@@ -70,7 +70,7 @@
         <connection>scm:git:git://github.com/c0stra/dsl-hell.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/c0stra/dsl-hell.git</developerConnection>
         <url>https://github.com/c0stra/dsl-hell</url>
-        <tag>HEAD</tag>
+        <tag>dsl-hell-1.9</tag>
     </scm>
 
     <distributionManagement>
