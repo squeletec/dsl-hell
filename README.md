@@ -127,6 +127,9 @@ To make sure, that nobody will miss it, the generated code benefits from followi
 
 ## Releases notes
 
+#### Version 1.9 (November 19th 2021)
+- Added static entry point class if all methods in the DSL are static.
+
 #### Version 1.8 (November 18th 2021)
 - Fixed visibility of the generated DSL interface, which was package private, and therefore limited
   to the package of the model class / interface.
