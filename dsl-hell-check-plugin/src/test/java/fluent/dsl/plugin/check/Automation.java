@@ -9,6 +9,6 @@ public interface Automation {
 
     @interface matches {}
 
-    void verify(@When Order order, @matches @Dsl Check<? super Order> criteria);
+    void verify(@When Order order, @matches Check<? super Order> criteria);
 
 }

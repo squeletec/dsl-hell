@@ -127,6 +127,10 @@ To make sure, that nobody will miss it, the generated code benefits from followi
 
 ## Releases notes
 
+#### Version 1.8 (November 18th 2021)
+- Fixed visibility of the generated DSL interface, which was package private, and therefore limited
+  to the package of the model class / interface.
+
 #### Version 1.3 (October 25th 2019)
 - Re-implemented aliases for DSL methods
 - Reorganized code and modules.

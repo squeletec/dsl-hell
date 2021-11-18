@@ -27,8 +27,9 @@
  *
  */
 
-package fluent.dsl;
+package fluent.dsl.bind;
 
+import fluent.dsl.Dsl;
 import fluent.dsl.bdd.When.and;
 import fluent.dsl.def.*;
 import fluent.validation.Check;

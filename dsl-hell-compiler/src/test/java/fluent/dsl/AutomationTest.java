@@ -29,6 +29,8 @@
 
 package fluent.dsl;
 
+import fluent.dsl.bind.Automation;
+import fluent.dsl.bind.AutomationDsl;
 import org.testng.annotations.Test;
 
 import static java.util.concurrent.TimeUnit.HOURS;

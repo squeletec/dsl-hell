@@ -35,7 +35,6 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -71,6 +70,9 @@ public class DslWriter {
         source.println(prefix + line);
     }
 
+    private void print(String line) {
+        source.print(line);
+    }
     private void println(String template, String... args) {
         println(format(template, (Object[]) args));
     }
@@ -83,6 +85,7 @@ public class DslWriter {
         println("import fluent.api.End;");
         println();
         println("@Generated(\"Generated DSL class\")");
+        print("public ");
         writeType(model);
     }
 
@@ -124,7 +127,7 @@ public class DslWriter {
     }
 
     private String modifiers(ElementModel model) {
-        return model.modifiers().keywords().isEmpty() ? "" : model.modifiers().keywords().stream().map(Modifier::toString).collect(Collectors.joining(" ")) + " ";
+        return model.modifiers().keywords().isEmpty() ? "" : model.modifiers().keywords().stream().map(Modifier::toString).collect(joining(" ")) + " ";
     }
 
     public void writeClass(ClassModel model) {
@@ -137,7 +140,11 @@ public class DslWriter {
     }
 
     private String typeParameters(GenericModel<?> model) {
-        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::simpleName).collect(Collectors.joining(", ", "<", "> "));
+        return model.typeParameters().isEmpty() ? "" : model.typeParameters().stream().map(TypeModel::simpleName).collect(joining(", ", "<", "> "));
+    }
+
+    private String annotations(ElementModel model) {
+        return model.annotations().stream().map(a -> "@" + a.type().simpleName()).collect(joining());
     }
 
     public void writeSignature(MethodModel model) {
@@ -193,7 +200,7 @@ public class DslWriter {
     }
 
     private void writeMethod(String prefix, MethodModel model) {
-        println("%s %s%s %s(%s) {", prefix, typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
+        println("%s %s%s%s %s(%s) {", prefix, annotations(model), typeParameters(model), model.returnType().fullName(), model.name(), parameters(model));
         if(model.body().isEmpty() && model.returnType() instanceof InterfaceModel)
             indent().writeAnonymousClass((InterfaceModel) model.returnType());
         model.body().forEach(indent()::writeStatement);
